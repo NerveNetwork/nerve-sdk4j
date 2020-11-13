@@ -1,0 +1,74 @@
+package network.nerve;
+
+import org.junit.Before;
+
+public class ConsensusServiceTest {
+
+    static String agentAddress = "tNULSeBaMkm6c3ShAFMzfDX8RKdapZdUcseSw8";
+    static String packingAddress = "tNULSeBaMf9i8j2yeLns9RVgAUERWcrT67fPP4";
+    static String password = "Nuls123546";
+
+    @Before
+    public void before() {
+        NerveSDKBootStrap.initTest("http://beta.api.nerve.network/");
+    }
+/*
+
+    @Test
+    public void testCreateAgent() {
+        CreateAgentForm form = new CreateAgentForm();
+        form.setAgentAddress(agentAddress);
+        form.setRewardAddress(agentAddress);
+        form.setPackingAddress(packingAddress);
+
+        form.setCommissionRate(10);
+        form.setDeposit("2000000000000");
+        form.setPassword(password);
+
+        Result result = NerveSDKTool.createAgent(form);
+        System.out.println(result.getData());
+    }
+
+    @Test
+    public void testDeposit() {
+        DepositForm form = new DepositForm();
+        form.setAddress(agentAddress);
+        form.setAgentHash("e52c29f1406d79281726fc75503384a723e805d9b8391d5ad53347210e7fc6de");
+        form.setDeposit("2000000000000");
+        form.setPassword(password);
+
+        Result result = NerveSDKTool.depositToAgent(form);
+        System.out.println(result.getData());
+    }
+
+    @Test
+    public void testWithDraw() {
+        WithdrawForm form = new WithdrawForm();
+        form.setAddress(agentAddress);
+        form.setTxHash("629495e2b9d53ee08eff196b9d9b42bd8cb3876d0eaf14a4a6a6a2761960c132");
+        form.setPassword(password);
+
+        Result result = NerveSDKTool.withdraw(form);
+        System.out.println(result.getData());
+    }
+
+    @Test
+    public void testStopAgent() {
+        StopAgentForm form = new StopAgentForm();
+        form.setAgentAddress(agentAddress);
+        form.setPassword(password);
+
+        Result result = NerveSDKTool.stopAgent(form);
+        System.out.println(result.getData());
+    }
+
+    @Test
+    public void testGetDepositList() {
+        String txHash = "ad74b5a061a065ee4b228d822e8b72b0bf43cf79996798b6aa117354b68a2164";
+        Result tx = NerveSDKTool.getDepositList(txHash);
+        System.out.println(tx.getData());
+    }
+*/
+
+
+}
