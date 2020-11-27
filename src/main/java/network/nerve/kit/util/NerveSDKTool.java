@@ -762,6 +762,7 @@ public class NerveSDKTool {
 
     /**
      * 异构链提现交易
+     *
      * @param withdrawalTxDto
      * @return
      */
@@ -785,6 +786,7 @@ public class NerveSDKTool {
      * @param fromAddress 转出地址（支付手续费地址）
      * @param txHash      要追加手续费的提现交易hash
      * @param amount      追加手续费数量
+     * @param time        时间
      * @param remark      备注
      * @return
      */
@@ -794,14 +796,15 @@ public class NerveSDKTool {
             @Parameter(parameterName = "fromAddress", requestType = @TypeDescriptor(value = String.class), parameterDes = "转出地址(当前链地址)"),
             @Parameter(parameterName = "txHash", requestType = @TypeDescriptor(value = String.class), parameterDes = "要追加手续费的提现交易hash"),
             @Parameter(parameterName = "amount", requestType = @TypeDescriptor(value = BigInteger.class), parameterDes = "追加手续费数量"),
+            @Parameter(parameterName = "time", requestType = @TypeDescriptor(value = long.class), parameterDes = "时间"),
             @Parameter(parameterName = "remark", requestType = @TypeDescriptor(value = String.class), parameterDes = "备注")
     })
     @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
             @Key(name = "hash", description = "交易hash"),
             @Key(name = "txHex", description = "交易序列化16进制字符串")
     }))
-    public static Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, String remark) {
-        return transactionService.withdrawalAdditionalFeeTx(fromAddress, txHash, amount, remark);
+    public static Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark) {
+        return transactionService.withdrawalAdditionalFeeTx(fromAddress, txHash, amount, time, remark);
     }
 
 

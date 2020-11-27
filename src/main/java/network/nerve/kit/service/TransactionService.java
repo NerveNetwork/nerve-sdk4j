@@ -832,10 +832,11 @@ public class TransactionService {
      * @param fromAddress
      * @param txHash
      * @param amount
+     * @param time
      * @param remark
      * @return
      */
-    public Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, String remark) {
+    public Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark) {
         try {
             //转账交易转出地址必须是本链地址
             if (!AddressTool.validAddress(SDKContext.main_chain_id, fromAddress)) {
@@ -856,7 +857,7 @@ public class TransactionService {
             }
             Transaction tx = new Transaction(TxType.WITHDRAWAL_ADDITIONAL_FEE);
             tx.setTxData(txDataBytes);
-            tx.setTime(NulsDateUtils.getCurrentTimeSeconds());
+            tx.setTime(time);
             tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
             byte[] coinData = assembleFeeCoinData(fromAddress, amount);
             tx.setCoinData(coinData);

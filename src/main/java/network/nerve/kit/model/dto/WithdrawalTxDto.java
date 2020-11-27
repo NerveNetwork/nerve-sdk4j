@@ -52,6 +52,8 @@ public class WithdrawalTxDto {
     private String remark;
     @ApiModelProperty(description = "用于支付异构链交易的手续费")
     private BigInteger distributionFee;
+    @ApiModelProperty(description = "交易时间")
+    private long time;
 
     public int getAssetChainId() {
         return assetChainId;
@@ -115,5 +117,13 @@ public class WithdrawalTxDto {
 
     public void setFromAddress(String fromAddress) {
         this.fromAddress = fromAddress;
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
     }
 }

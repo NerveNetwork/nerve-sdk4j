@@ -240,7 +240,7 @@ public class NaboxCollectionTest {
         String withdrawalTxHash = "2dae6440f691e08552dd707a22412a6474c91e8f10810fd0dbddac301b167dff";
         BigInteger amount = new BigInteger("1000000000");
         String remark = null;
-        Result<Map> result = NerveSDKTool.withdrawalAdditionalFeeTx(fromAddress, withdrawalTxHash, amount, remark);
+        Result<Map> result = NerveSDKTool.withdrawalAdditionalFeeTx(fromAddress, withdrawalTxHash, amount, 0, remark);
 
         String txHex = (String) result.getData().get("txHex");
         //签名
