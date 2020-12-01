@@ -29,14 +29,6 @@ public class SDKContext {
      */
     public static String addressPrefix = "NERVE";
 
-//    /**
-//     * 默认转账交易手续费单价
-//     */
-//    public static BigInteger DEFAULT_NORMAL_TX_FEE_PRICE = new BigInteger("100000");
-//    /**
-//     * 默认业务交易手续费单价
-//     */
-//    public static BigInteger DEFAULT_OTHER_TX_FEE_PRICE = new BigInteger("100000");
 
     /**
      * 注销共识节点，保证金锁定时间
@@ -46,6 +38,5 @@ public class SDKContext {
      * 访问钱包的http接口url地址
      */
     public static String wallet_url = "https://api.nerve.network/";
-//    public static String wallet_url = "http://127.0.0.1:17004/";
 
 }

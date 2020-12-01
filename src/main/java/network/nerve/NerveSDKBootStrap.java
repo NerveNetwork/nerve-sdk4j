@@ -24,6 +24,7 @@
 
 package network.nerve;
 
+import network.nerve.core.model.StringUtils;
 import network.nerve.core.parse.I18nUtils;
 
 /**
@@ -47,7 +48,9 @@ public class NerveSDKBootStrap {
         if (httpUrl != null && !httpUrl.endsWith("/")) {
             httpUrl += "/";
         }
-        SDKContext.wallet_url = httpUrl;
+        if (StringUtils.isNotBlank(httpUrl)) {
+            SDKContext.wallet_url = httpUrl;
+        }
         SDKContext.addressPrefix = addressPrefix;
     }
 
@@ -68,8 +71,10 @@ public class NerveSDKBootStrap {
         if (httpUrl != null && !httpUrl.endsWith("/")) {
             httpUrl += "/";
         }
+        if (StringUtils.isNotBlank(httpUrl)) {
+            SDKContext.wallet_url = httpUrl;
+        }
         SDKContext.nuls_chain_id = nulsChainId;
-        SDKContext.wallet_url = httpUrl;
         SDKContext.addressPrefix = addressPrefix;
         SDKContext.addressPrefixNuls = addressPrefixNuls;
     }
@@ -85,7 +90,9 @@ public class NerveSDKBootStrap {
         if (httpUrl != null && !httpUrl.endsWith("/")) {
             httpUrl += "/";
         }
-        SDKContext.wallet_url = httpUrl;
+        if (StringUtils.isNotBlank(httpUrl)) {
+            SDKContext.wallet_url = httpUrl;
+        }
         SDKContext.nuls_chain_id = 2;
         SDKContext.addressPrefixNuls = "tNULS";
         SDKContext.addressPrefix = "TNVT";
