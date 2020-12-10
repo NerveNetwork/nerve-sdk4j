@@ -40,4 +40,6 @@ public interface Constant {
      * 手续费汇集分发公钥
      */
     byte[] FEE_PUBKEY = HexUtil.decode("111111111111111111111111111111111111111111111111111111111111111111");
+
+    String PUBLIC_SERVER_URL = "https://scan.nerve.network/api/";
 }

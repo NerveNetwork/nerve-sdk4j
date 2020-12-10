@@ -5,6 +5,8 @@ import network.nerve.SDKContext;
 import network.nerve.base.basic.NulsByteBuffer;
 import network.nerve.base.data.Transaction;
 import network.nerve.core.basic.Result;
+import network.nerve.core.constant.CommonCodeConstanst;
+import network.nerve.core.constant.ErrorCode;
 import network.nerve.core.crypto.HexUtil;
 import network.nerve.core.exception.NulsException;
 import network.nerve.core.rpc.model.*;
@@ -15,9 +17,12 @@ import network.nerve.kit.service.BlockService;
 import network.nerve.kit.service.ConsensusService;
 import network.nerve.kit.service.TransactionService;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+
+import static network.nerve.kit.constant.Constant.PUBLIC_SERVER_URL;
 
 public class NerveSDKTool {
 
@@ -890,7 +895,36 @@ public class NerveSDKTool {
         }
     }
 
-    //todo  查询资产信息
+    @ApiOperation(description = "根据资产信息获取资产的USD价格", order = 370)
+    @Parameters({
+            @Parameter(parameterName = "assetChainId", parameterDes = "资产链ID", requestType = @TypeDescriptor(value = int.class)),
+            @Parameter(parameterName = "assetId", parameterDes = "资产ID", requestType = @TypeDescriptor(value = int.class))
+    })
+    @ResponseData(name = "返回值", description = "价格", responseType = @TypeDescriptor(value = BigDecimal.class))
+    public static BigDecimal getUsdPrice(int assetChainId, int assetId)  {
+        Result rs = getSymbolInfo(assetChainId, assetId);
+        Map map = (Map)rs.getData();
+        String usdPrice = map.get("usdPrice").toString();
+        return new BigDecimal(usdPrice);
+    }
+
+    @ApiOperation(description = "根据资产信息获取资产信息", order = 371)
+    @Parameters({
+            @Parameter(parameterName = "assetChainId", parameterDes = "资产链ID", requestType = @TypeDescriptor(value = int.class)),
+            @Parameter(parameterName = "assetId", parameterDes = "资产ID", requestType = @TypeDescriptor(value = int.class))
+    })
+    @ResponseData(name = "返回值", description = "价格", responseType = @TypeDescriptor(value = BigDecimal.class))
+    public static Result getSymbolInfo(int assetChainId, int assetId)  {
+        if (assetChainId == 0 || assetId == 0) {
+            return Result.getFailed(CommonCodeConstanst.NULL_PARAMETER).setMsg("assetChainId or assetId is empty");
+        }
+        RpcResult<Map> rpcResult = JsonRpcUtil.request(PUBLIC_SERVER_URL,"getSymbolInfo", ListUtil.of(assetChainId, assetId));
+        RpcResultError rpcResultError = rpcResult.getError();
+        if (rpcResultError != null) {
+            return Result.getFailed(ErrorCode.init(rpcResultError.getCode())).setMsg(rpcResultError.getMessage());
+        }
+        return Result.getSuccess(CommonCodeConstanst.SUCCESS).setData(rpcResult.getResult());
+    }
 
 
 }
