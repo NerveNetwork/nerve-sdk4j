@@ -926,5 +926,9 @@ public class NerveSDKTool {
         return Result.getSuccess(CommonCodeConstanst.SUCCESS).setData(rpcResult.getResult());
     }
 
+    public static void main(String[] args) {
+        BigDecimal usdPrice = getUsdPrice(9, 2);
+        System.out.println(usdPrice);
+    }
 
 }
