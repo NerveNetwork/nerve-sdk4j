@@ -26,6 +26,7 @@ package network.nerve.core.exception;
 
 import network.nerve.core.constant.ErrorCode;
 import network.nerve.core.model.StringUtils;
+import network.nerve.core.parse.I18nUtils;
 
 import java.text.MessageFormat;
 
@@ -37,7 +38,12 @@ public class NulsRuntimeException extends RuntimeException {
     private String code;
     private String message;
     private ErrorCode errorCode;
+    private static final String LANGUAGE = "en";
+    private static final String LANGUAGE_PATH = "languages";
 
+    static {
+        I18nUtils.loadLanguage(NulsRuntimeException.class, LANGUAGE_PATH, LANGUAGE);
+    }
     /**
      * Constructs a new exception with the specified detail validator.  The
      * cause is not initialized, and may subsequently be initialized by
