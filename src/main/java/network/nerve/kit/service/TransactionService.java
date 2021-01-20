@@ -794,7 +794,7 @@ public class TransactionService {
      * @param withdrawalTxDto
      * @return
      */
-    public Result createWithdrawalTx(WithdrawalTxDto withdrawalTxDto) {
+    public Result createWithdrawalTx(WithdrawalTxDto withdrawalTxDto, String withdrawalAssetNonce, String nvtFeeAssetNonce) {
         validateChainId();
         try {
             CommonValidator.checkWithdrawalTxDto(withdrawalTxDto);
@@ -812,7 +812,7 @@ public class TransactionService {
             tx.setTxData(txDataBytes);
             tx.setTime(NulsDateUtils.getCurrentTimeSeconds());
             tx.setRemark(StringUtils.isBlank(withdrawalTxDto.getRemark()) ? null : StringUtils.bytes(withdrawalTxDto.getRemark()));
-            byte[] coinData = assembleWithdrawalCoinData(withdrawalTxDto);
+            byte[] coinData = assembleWithdrawalCoinData(withdrawalTxDto, withdrawalAssetNonce, nvtFeeAssetNonce);
             tx.setCoinData(coinData);
             tx.setHash(NulsHash.calcHash(tx.serializeForHash()));
 
@@ -836,7 +836,7 @@ public class TransactionService {
      * @param remark
      * @return
      */
-    public Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark) {
+    public Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark, String nonce) {
         try {
             //转账交易转出地址必须是本链地址
             if (!AddressTool.validAddress(SDKContext.main_chain_id, fromAddress)) {
@@ -859,7 +859,12 @@ public class TransactionService {
             tx.setTxData(txDataBytes);
             tx.setTime(time);
             tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
-            byte[] coinData = assembleFeeCoinData(fromAddress, amount);
+            byte[] coinData;
+            if (nonce == null) {
+                coinData = assembleFeeCoinData(fromAddress, amount);
+            } else {
+                coinData = assembleFeeCoinData(fromAddress, amount, nonce);
+            }
             tx.setCoinData(coinData);
             tx.setHash(NulsHash.calcHash(tx.serializeForHash()));
 
@@ -882,7 +887,7 @@ public class TransactionService {
      * @return
      * @throws NulsException
      */
-    private byte[] assembleWithdrawalCoinData(WithdrawalTxDto withdrawalTxDto) throws NulsException {
+    private byte[] assembleWithdrawalCoinData(WithdrawalTxDto withdrawalTxDto, String withdrawalAssetNonce, String nvtFeeAssetNonce) throws NulsException {
         int withdrawalAssetId = withdrawalTxDto.getAssetId();
         int withdrawalAssetChainId = withdrawalTxDto.getAssetChainId();
 
@@ -891,15 +896,23 @@ public class TransactionService {
         BigInteger amount = withdrawalTxDto.getAmount();
         String address = withdrawalTxDto.getFromAddress();
         //提现资产from
-        CoinFrom withdrawalCoinFrom = getWithdrawalCoinFrom(address, amount, withdrawalAssetChainId, withdrawalAssetId, withdrawalTxDto.getDistributionFee());
+        CoinFrom withdrawalCoinFrom;
+        if (withdrawalAssetNonce == null) {
+            withdrawalCoinFrom = getWithdrawalCoinFrom(address, amount, withdrawalAssetChainId, withdrawalAssetId, withdrawalTxDto.getDistributionFee());
+        } else {
+            withdrawalCoinFrom = getWithdrawalCoinFrom(address, amount, withdrawalAssetChainId, withdrawalAssetId, withdrawalTxDto.getDistributionFee(), withdrawalAssetNonce);
+        }
         List<CoinFrom> listFrom = new ArrayList<>();
         listFrom.add(withdrawalCoinFrom);
         if (withdrawalAssetChainId != chainId || assetId != withdrawalAssetId) {
             // 只要不是当前链主资产 都要组装额外的coinFrom
-            CoinFrom withdrawalFeeCoinFrom = null;
+            CoinFrom withdrawalFeeCoinFrom;
             //手续费from 包含异构链补贴手续费
-            withdrawalFeeCoinFrom = getWithdrawalFeeCoinFrom(address, withdrawalTxDto.getDistributionFee());
-
+            if (nvtFeeAssetNonce == null) {
+                withdrawalFeeCoinFrom = getWithdrawalFeeCoinFrom(address, withdrawalTxDto.getDistributionFee());
+            } else {
+                withdrawalFeeCoinFrom = getWithdrawalFeeCoinFrom(address, withdrawalTxDto.getDistributionFee(), nvtFeeAssetNonce);
+            }
             listFrom.add(withdrawalFeeCoinFrom);
         }
         //组装to
@@ -972,6 +985,28 @@ public class TransactionService {
                 (byte) 0);
     }
 
+    private CoinFrom getWithdrawalCoinFrom(
+            String address,
+            BigInteger amount,
+            int withdrawalAssetChainId,
+            int withdrawalAssetId,
+            BigInteger withdrawalHeterogeneousFeeNvt,
+            String withdrawalAssetNonce) throws NulsException {
+        if (withdrawalAssetChainId == SDKContext.main_chain_id && SDKContext.main_asset_id == withdrawalAssetId) {
+            // 异构转出链内主资产, 直接合并到一个coinFrom
+            // 总手续费 = 链内打包手续费 + 异构链转账(或签名)手续费[都以链内主资产结算]
+            BigInteger totalFee = TransactionFeeCalculator.NORMAL_PRICE_PRE_1024_BYTES.add(withdrawalHeterogeneousFeeNvt);
+            amount = totalFee.add(amount);
+        }
+        return new CoinFrom(
+                AddressTool.getAddress(address),
+                withdrawalAssetChainId,
+                withdrawalAssetId,
+                amount,
+                HexUtil.decode(withdrawalAssetNonce),
+                (byte) 0);
+    }
+
     /**
      * 组装提现交易手续费(包含链内打包手续费, 异构链补贴手续费)
      *
@@ -1000,6 +1035,15 @@ public class TransactionService {
         // 查询账本获取nonce值
         String nonce = balanceMap.get("nonce").toString();
         return new CoinFrom(AddressTool.getAddress(address), chainId, assetId, totalFee, HexUtil.decode(nonce), (byte) 0);
+    }
+
+    private CoinFrom getWithdrawalFeeCoinFrom(String address, BigInteger withdrawalHeterogeneousFeeNvt,
+                                              String nvtFeeAssetNonce) throws NulsException {
+        int chainId = SDKContext.main_chain_id;
+        int assetId = SDKContext.main_asset_id;
+        // 总手续费 = 链内打包手续费 + 异构链转账(或签名)手续费[都以链内主资产结算]
+        BigInteger totalFee = TransactionFeeCalculator.NORMAL_PRICE_PRE_1024_BYTES.add(withdrawalHeterogeneousFeeNvt);
+        return new CoinFrom(AddressTool.getAddress(address), chainId, assetId, totalFee, HexUtil.decode(nvtFeeAssetNonce), (byte) 0);
     }
 
 
@@ -1042,6 +1086,39 @@ public class TransactionService {
         if (BigIntegerUtils.isLessThan(balance, TransactionFeeCalculator.NORMAL_PRICE_PRE_1024_BYTES.add(extraFee))) {
             throw new NulsException(AccountErrorCode.INSUFFICIENT_BALANCE);
         }
+        CoinTo extraFeeCoinTo = new CoinTo(
+                AddressTool.getAddress(Constant.FEE_PUBKEY, assetChainId),
+                assetChainId,
+                assetId,
+                extraFee);
+        tos.add(extraFeeCoinTo);
+
+        coinData.setFrom(froms);
+        coinData.setTo(tos);
+        try {
+            return coinData.serialize();
+        } catch (IOException e) {
+            throw new NulsException(AccountErrorCode.SERIALIZE_ERROR);
+        }
+    }
+
+    private byte[] assembleFeeCoinData(String address, BigInteger extraFee, String nonce) throws NulsException {
+
+        int assetChainId = SDKContext.main_chain_id;
+        int assetId = SDKContext.main_asset_id;
+        BigInteger amount = TransactionFeeCalculator.NORMAL_PRICE_PRE_1024_BYTES.add(extraFee);
+        CoinFrom coinFrom = new CoinFrom(
+                AddressTool.getAddress(address),
+                assetChainId,
+                assetId,
+                amount,
+                HexUtil.decode(nonce),
+                (byte) 0);
+        CoinData coinData = new CoinData();
+        List<CoinFrom> froms = new ArrayList<>();
+        froms.add(coinFrom);
+
+        List<CoinTo> tos = new ArrayList<>();
         CoinTo extraFeeCoinTo = new CoinTo(
                 AddressTool.getAddress(Constant.FEE_PUBKEY, assetChainId),
                 assetChainId,

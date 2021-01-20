@@ -27,7 +27,9 @@ package network.nerve;
 import network.nerve.base.data.Transaction;
 import network.nerve.core.basic.Result;
 import network.nerve.core.crypto.HexUtil;
+import network.nerve.core.exception.NulsException;
 import network.nerve.core.parse.JSONUtils;
+import network.nerve.kit.error.AccountErrorCode;
 import network.nerve.kit.model.dto.WithdrawalTxDto;
 import network.nerve.kit.txdata.WithdrawalAdditionalFeeTxData;
 import network.nerve.kit.util.NerveSDKTool;
@@ -257,4 +259,120 @@ public class NaboxCollectionTest {
 
     }
 
+    /**
+     * 提现
+     */
+    @Test
+    public void createWithdrawalTxOffline() throws Exception {
+        String fromAddress = "TNVTdTSPMcyC8e7jz8f6ngX5yTmK6S8CXEGva";
+        String prikey = "17c50c6f7f18e7afd37d39f92c1d48054b6b3aa2373a70ecf2d6663eace2a7d6";
+        // 声明提现资产ID
+        int withdrawalAssetChainId = 5;
+        int withdrawalAssetId = 9;
+        // 声明异构链网络信息
+        int heterogeneousChainId = 103;
+        // 声明提现接收地址
+        String toAddress = "0xc11D9943805e56b630A401D4bd9A29550353EFa1";
+
+        /**************************************** 以下需要在线请求的接口 ****************************************/
+        // 获取账户提现资产、NVT资产的nonce值
+        String withdrawalAssetNonce;
+        String nvtFeeAssetNonce;
+        Result withdrawalAssetBalance = NerveSDKTool.getAccountBalance(fromAddress, withdrawalAssetChainId, withdrawalAssetId);
+        if (!withdrawalAssetBalance.isSuccess()) {
+            throw new NulsException(AccountErrorCode.RPC_REQUEST_FAILD, withdrawalAssetBalance.toString());
+        }
+        Map withdrawalAssetBalanceData = (Map) withdrawalAssetBalance.getData();
+        withdrawalAssetNonce = withdrawalAssetBalanceData.get("nonce").toString();
+
+        Result nvtFeeAssetBalance = NerveSDKTool.getAccountBalance(fromAddress, SDKContext.main_chain_id, SDKContext.main_asset_id);
+        if (!nvtFeeAssetBalance.isSuccess()) {
+            throw new NulsException(AccountErrorCode.RPC_REQUEST_FAILD, nvtFeeAssetBalance.toString());
+        }
+        Map nvtFeeAssetBalanceData = (Map) nvtFeeAssetBalance.getData();
+        nvtFeeAssetNonce = nvtFeeAssetBalanceData.get("nonce").toString();
+
+        /**************************************** 以下是完全离线方式组装提现交易 ****************************************/
+        WithdrawalTxDto withdrawalTxDto = new WithdrawalTxDto();
+        // 设置转出账户
+        withdrawalTxDto.setFromAddress(fromAddress);
+        // 设置提现资产ID
+        withdrawalTxDto.setAssetChainId(withdrawalAssetChainId);
+        withdrawalTxDto.setAssetId(withdrawalAssetId);
+        // 设置异构链网络ID
+        withdrawalTxDto.setHeterogeneousChainId(heterogeneousChainId);
+        // 设置异构链提现接收地址
+        withdrawalTxDto.setHeterogeneousAddress(toAddress);
+        // 设置提现金额
+        String amount = "0.001";
+        // 设置小数位
+        int decimals = 18; //
+        BigDecimal am = new BigDecimal(amount).movePointRight(decimals);
+        withdrawalTxDto.setAmount(am.toBigInteger());
+
+        // 设置提现的NVT手续费
+        String feeStr = "2";
+        int decimalsFee = 8; //小数位
+        BigDecimal fee = new BigDecimal(feeStr).movePointRight(decimalsFee);
+        withdrawalTxDto.setDistributionFee(fee.toBigInteger());
+        withdrawalTxDto.setRemark(null);
+
+        // 组装离线交易
+        Result<Map> result = NerveSDKTool.createWithdrawalTx(withdrawalTxDto, withdrawalAssetNonce, nvtFeeAssetNonce);
+        String txHex = (String) result.getData().get("txHex");
+        // 离线交易签名
+        result = NerveSDKTool.sign(txHex, fromAddress, prikey);
+        txHex = (String) result.getData().get("txHex");
+        String txHash = (String) result.getData().get("hash");
+        /***************************************************************************************************/
+
+        // 在线接口，广播交易
+        result = NerveSDKTool.broadcast(txHex);
+        Transaction tx = Transaction.getInstance(HexUtil.decode(txHex));
+        System.out.println(tx.format());
+        System.out.println(String.format("hash: %s", txHash));
+        System.out.println(String.format("hash: %s", JSONUtils.obj2json(result)));
+
+    }
+
+
+    @Test
+    public void withdrawalAdditionalFeeTxOffline() throws Exception {
+        // 设置追加手续费的账户，必须与提现账户一致
+        String fromAddress = "TNVTdTSPMcyC8e7jz8f6ngX5yTmK6S8CXEGva";
+        String prikey = "17c50c6f7f18e7afd37d39f92c1d48054b6b3aa2373a70ecf2d6663eace2a7d6";
+        // 发出的提现交易hash
+        String withdrawalTxHash = "2dae6440f691e08552dd707a22412a6474c91e8f10810fd0dbddac301b167dff";
+        // 追加的NVT手续费，此处设置为追加10个NVT
+        BigInteger amount = new BigInteger("1000000000");
+        String remark = null;
+
+        /**************************************** 以下需要在线请求的接口 ****************************************/
+        // 获取账NVT资产的nonce值
+        String nvtFeeAssetNonce;
+        Result nvtFeeAssetBalance = NerveSDKTool.getAccountBalance(fromAddress, SDKContext.main_chain_id, SDKContext.main_asset_id);
+        if (!nvtFeeAssetBalance.isSuccess()) {
+            throw new NulsException(AccountErrorCode.RPC_REQUEST_FAILD, nvtFeeAssetBalance.toString());
+        }
+        Map nvtFeeAssetBalanceData = (Map) nvtFeeAssetBalance.getData();
+        nvtFeeAssetNonce = nvtFeeAssetBalanceData.get("nonce").toString();
+
+        /**************************************** 以下是完全离线方式组装提现交易 ****************************************/
+        // 组装离线交易
+        Result<Map> result = NerveSDKTool.withdrawalAdditionalFeeTx(fromAddress, withdrawalTxHash, amount, 0, remark, nvtFeeAssetNonce);
+        String txHex = (String) result.getData().get("txHex");
+        // 离线交易签名
+
+        result = NerveSDKTool.sign(txHex, fromAddress, prikey);
+        txHex = (String) result.getData().get("txHex");
+        String txHash = (String) result.getData().get("hash");
+        /***************************************************************************************************/
+        // 在线接口，广播交易
+        result = NerveSDKTool.broadcast(txHex);
+        Transaction tx = Transaction.getInstance(HexUtil.decode(txHex));
+        System.out.println(tx.format(WithdrawalAdditionalFeeTxData.class));
+        System.out.println(String.format("hash: %s", txHash));
+        System.out.println(String.format("hash: %s", JSONUtils.obj2json(result)));
+
+    }
 }

@@ -780,8 +780,9 @@ public class NerveSDKTool {
             @Key(name = "txHex", description = "交易序列化16进制字符串")
     }))
     public static Result createWithdrawalTx(WithdrawalTxDto withdrawalTxDto) {
-        return transactionService.createWithdrawalTx(withdrawalTxDto);
+        return createWithdrawalTx(withdrawalTxDto, null, null);
     }
+
 
     /**
      * 追加异构提现手续费
@@ -809,7 +810,55 @@ public class NerveSDKTool {
             @Key(name = "txHex", description = "交易序列化16进制字符串")
     }))
     public static Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark) {
-        return transactionService.withdrawalAdditionalFeeTx(fromAddress, txHash, amount, time, remark);
+        return transactionService.withdrawalAdditionalFeeTx(fromAddress, txHash, amount, time, remark, null);
+    }
+
+
+    /**
+     * 异构链提现交易（完全离线状态）
+     *
+     */
+    @ApiOperation(description = "异构链提现交易（完全离线状态）", order = 332, detailDesc = "组装异构链提现交易（完全离线状态）")
+    @Parameters({
+            @Parameter(parameterName = "withdrawalTxDto", parameterDes = "提现交易参数", requestType = @TypeDescriptor(value = WithdrawalTxDto.class)),
+            @Parameter(parameterName = "withdrawalAssetNonce", parameterDes = "提现资产的nonce"),
+            @Parameter(parameterName = "nvtFeeAssetNonce", parameterDes = "nvt手续费资产的nonce")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result createWithdrawalTx(WithdrawalTxDto withdrawalTxDto, String withdrawalAssetNonce, String nvtFeeAssetNonce) {
+        return transactionService.createWithdrawalTx(withdrawalTxDto, withdrawalAssetNonce, nvtFeeAssetNonce);
+    }
+    /**
+     * 追加异构提现手续费（完全离线状态）
+     * 1.不能为已完成的提现交易追加手续费
+     * 2.提现交易与追加手续费交易必须由相同的地址发起（相同私钥签名）
+     *
+     * @param fromAddress 转出地址（支付手续费地址）
+     * @param txHash      要追加手续费的提现交易hash
+     * @param amount      追加手续费数量
+     * @param time        时间
+     * @param remark      备注
+     * @return
+     */
+    @ApiOperation(description = "追加异构提现手续费（完全离线状态）", order = 333, detailDesc = "（完全离线状态）支付NVT来为提现交易追加手续费(加速)，不能为已完成的提现交易追加手续费" +
+            "提现交易与追加手续费交易必须由相同的地址发起（相同私钥签名）")
+    @Parameters({
+            @Parameter(parameterName = "fromAddress", requestType = @TypeDescriptor(value = String.class), parameterDes = "转出地址(当前链地址)"),
+            @Parameter(parameterName = "txHash", requestType = @TypeDescriptor(value = String.class), parameterDes = "要追加手续费的提现交易hash"),
+            @Parameter(parameterName = "amount", requestType = @TypeDescriptor(value = BigInteger.class), parameterDes = "追加手续费数量"),
+            @Parameter(parameterName = "time", requestType = @TypeDescriptor(value = long.class), parameterDes = "时间"),
+            @Parameter(parameterName = "remark", requestType = @TypeDescriptor(value = String.class), parameterDes = "备注"),
+            @Parameter(parameterName = "nonce", parameterDes = "nvt手续费资产的nonce")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark, String nonce) {
+        return transactionService.withdrawalAdditionalFeeTx(fromAddress, txHash, amount, time, remark, nonce);
     }
 
 
