@@ -21,7 +21,6 @@ package network.nerve.core.crypto;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedBytes;
-import com.sun.istack.internal.Nullable;
 import network.nerve.core.basic.VarInt;
 import network.nerve.core.model.ObjectUtils;
 import network.nerve.core.parse.SerializeUtils;
@@ -47,6 +46,7 @@ import org.bouncycastle.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
