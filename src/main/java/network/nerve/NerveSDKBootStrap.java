@@ -43,16 +43,16 @@ public class NerveSDKBootStrap {
      * @param chainId 链ID
      * @param httpUrl 钱包url访问地址(ip + port)
      */
-    public static void init(int chainId, String addressPrefix, String httpUrl) {
-        initChainId(chainId);
-        if (httpUrl != null && !httpUrl.endsWith("/")) {
-            httpUrl += "/";
-        }
-        if (StringUtils.isNotBlank(httpUrl)) {
-            SDKContext.wallet_url = httpUrl;
-        }
-        SDKContext.addressPrefix = addressPrefix;
-    }
+//    public static void init(int chainId, String addressPrefix, String httpUrl) {
+//        initChainId(chainId);
+//        if (httpUrl != null && !httpUrl.endsWith("/")) {
+//            httpUrl += "/";
+//        }
+//        if (StringUtils.isNotBlank(httpUrl)) {
+//            SDKContext.wallet_url = httpUrl;
+//        }
+//        SDKContext.addressPrefix = addressPrefix;
+//    }
 
     /**
      * 初始化为 nerve 与 nuls 对接跨链关系的工具包
