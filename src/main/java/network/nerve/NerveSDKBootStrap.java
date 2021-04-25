@@ -57,16 +57,16 @@ public class NerveSDKBootStrap {
     /**
      * 初始化为 nerve 与 nuls 对接跨链关系的工具包
      * 初始化时必须按照以下方式来使用(默认已配置成主网对主网)
-     *  nuls测试网对nerve测试网
-     *  nuls主网对nerve主网
+     * nuls测试网对nerve测试网
+     * nuls主网对nerve主网
      *
-     * @param chainId 当前链Id
-     * @param nulsChainId nuls网链id
+     * @param chainId           当前链Id
+     * @param nulsChainId       nuls网链id
      * @param addressPrefix
      * @param addressPrefixNuls
      * @param httpUrl
      */
-    public static void init(int chainId, int nulsChainId, String addressPrefix,String addressPrefixNuls, String httpUrl) {
+    public static void init(int chainId, int nulsChainId, String addressPrefix, String addressPrefixNuls, String httpUrl) {
         initChainId(chainId);
         if (httpUrl != null && !httpUrl.endsWith("/")) {
             httpUrl += "/";

@@ -200,7 +200,7 @@ public class TransactionService {
         from.setAssetId(assetId);
         from.setNonce(nonce);
         inputs.add(from);
-
+/*      2021-4-25 取消手续费
         Result accountBalanceFeeR = NerveSDKTool.getAccountBalance(fromAddress, SDKContext.main_chain_id, SDKContext.main_asset_id);
         if (!accountBalanceFeeR.isSuccess()) {
             return Result.getFailed(accountBalanceFeeR.getErrorCode()).setMsg(accountBalanceFeeR.getMsg());
@@ -225,7 +225,7 @@ public class TransactionService {
         fromFee.setAssetChainId(SDKContext.main_chain_id);
         fromFee.setAssetId(SDKContext.main_asset_id);
         fromFee.setNonce(nonceFee);
-        inputs.add(fromFee);
+        inputs.add(fromFee);*/
 
         List<CoinToDto> outputs = new ArrayList<>();
         CoinToDto to = new CoinToDto();
@@ -280,14 +280,14 @@ public class TransactionService {
         }
         Map balance = (Map) accountBalanceR.getData();
 
-
+/*      2021-4-25 取消链内手续费
         TransferTxFeeDto feeDto = new TransferTxFeeDto();
         feeDto.setAddressCount(1);
         feeDto.setFromLength(2);
         feeDto.setToLength(1);
         feeDto.setRemark(remark);
         BigInteger feeNeed = NerveSDKTool.calcTransferTxFee(feeDto);
-        BigInteger amountTotal = amount.add(feeNeed);
+        BigInteger amountTotal = amount.add(feeNeed);*/
 /*        不验证余额
         BigInteger senderBalance = new BigInteger(balance.get("available").toString());
         if (senderBalance.compareTo(amountTotal) < 0) {
@@ -301,7 +301,7 @@ public class TransactionService {
         //转账资产
         CoinFromDto from = new CoinFromDto();
         from.setAddress(fromAddress);
-        from.setAmount(amountTotal);
+        from.setAmount(amount);
         from.setAssetChainId(SDKContext.main_chain_id);
         from.setAssetId(SDKContext.main_asset_id);
         from.setNonce(nonce);
@@ -966,7 +966,7 @@ public class TransactionService {
 
         Result accountBalance = NerveSDKTool.getAccountBalance(address, withdrawalAssetChainId, withdrawalAssetId);
         if (!accountBalance.isSuccess()) {
-            throw new NulsException(AccountErrorCode.INSUFFICIENT_BALANCE);
+            throw new NulsException(AccountErrorCode.NOT_FOUND_NONCE);
         }
         Map balance = (Map) accountBalance.getData();
 /*      不验证余额是否足够够 保证可以提前组装交易
@@ -1031,7 +1031,7 @@ public class TransactionService {
 
         Result accountBalance = NerveSDKTool.getAccountBalance(address, chainId, assetId);
         if (!accountBalance.isSuccess()) {
-            throw new NulsException(AccountErrorCode.INSUFFICIENT_BALANCE);
+            throw new NulsException(AccountErrorCode.NOT_FOUND_NONCE);
         }
         Map balanceMap = (Map) accountBalance.getData();
         // 本链资产余额
@@ -1072,7 +1072,7 @@ public class TransactionService {
         int assetId = SDKContext.main_asset_id;
         Result accountBalance = NerveSDKTool.getAccountBalance(address, assetChainId, assetId);
         if (!accountBalance.isSuccess()) {
-            throw new NulsException(AccountErrorCode.INSUFFICIENT_BALANCE);
+            throw new NulsException(AccountErrorCode.NOT_FOUND_NONCE);
         }
         Map balanceMap = (Map) accountBalance.getData();
         BigInteger amount = TransactionFeeCalculator.NORMAL_PRICE_PRE_1024_BYTES.add(extraFee);
