@@ -62,11 +62,11 @@ public class NaboxCollectionTest {
         String fromAddress = "TNVTdTSPEn3kK94RqiMffiKkXTQ2anRwhN1J9";
         String toAddress = "TNVTdTSPMv8w4t1VaZ2ExNJdUUoihz4AocTQb";
         String value = "1.5";
-        int tokenDecimals = 18;
+        int tokenDecimals = 8;
         BigInteger amount = new BigDecimal(value).multiply(BigDecimal.TEN.pow(tokenDecimals)).toBigInteger();
         // 2-1, 5-9
         Result<Map> result =
-                NerveSDKTool.createTxSimpleTransferOfNonNvt(fromAddress, toAddress, 5, 9, amount,
+                NerveSDKTool.createTxSimpleTransferOfNonNvt(fromAddress, toAddress, 2, 1, amount,
                         1605064055, "createTxSimpleTransferOfNonNvt");
         String txHex = (String) result.getData().get("txHex");
         //签名

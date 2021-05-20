@@ -5,8 +5,6 @@ import network.nerve.core.log.Log;
 import network.nerve.core.parse.JSONUtils;
 import network.nerve.kit.model.dto.RpcResult;
 import network.nerve.kit.model.dto.RpcResultError;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,35 +27,21 @@ public class JsonRpcUtil {
     private static final String JSONRPC_VERSION = "2.0";
 
     public static RpcResult request(String method, List<Object> params) {
-        RpcResult rpcResult;
-        CloseableHttpClient httpClient = null;
-        CloseableHttpResponse response = null;
-        try {
-            Map<String, Object> map = new HashMap<>(8);
-            map.put(ID, DEFAULT_ID);
-            map.put(JSONRPC, JSONRPC_VERSION);
-            map.put(METHOD, method);
-            map.put(PARAMS, params);
-            String resultStr = HttpClientUtil.post(wallet_url + JSONRPC + "/", map);
-            rpcResult = JSONUtils.json2pojo(resultStr, RpcResult.class);
-        } catch (Exception e) {
-            Log.error(e);
-            rpcResult = RpcResult.failed(new RpcResultError(CommonCodeConstanst.DATA_ERROR.getCode(), e.getMessage(), null));
-        }
-        return rpcResult;
+        String url = wallet_url + JSONRPC;
+        return request(url, method, params);
+
     }
 
     public static RpcResult request(String requestURL, String method, List<Object> params) {
         RpcResult rpcResult;
-        CloseableHttpClient httpClient = null;
-        CloseableHttpResponse response = null;
         try {
             Map<String, Object> map = new HashMap<>(8);
             map.put(ID, DEFAULT_ID);
             map.put(JSONRPC, JSONRPC_VERSION);
             map.put(METHOD, method);
             map.put(PARAMS, params);
-            String resultStr = HttpClientUtil.post(requestURL, map);
+            String param = JSONUtils.obj2json(map);
+            String resultStr = OkHttpClientUtil.getInstance().postJson(requestURL, param);
             rpcResult = JSONUtils.json2pojo(resultStr, RpcResult.class);
         } catch (Exception e) {
             Log.error(e);
