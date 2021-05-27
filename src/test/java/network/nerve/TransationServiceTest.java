@@ -1,8 +1,12 @@
 package network.nerve;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import network.nerve.base.data.Transaction;
 import network.nerve.core.basic.Result;
+import network.nerve.core.parse.JSONUtils;
+import network.nerve.kit.model.NerveToken;
 import network.nerve.kit.model.dto.*;
+import network.nerve.kit.txdata.StableSwapTradeData;
 import network.nerve.kit.util.NerveSDKTool;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,8 +29,24 @@ public class TransationServiceTest {
 
     @Before
     public void before() {
-//        NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
-        NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://127.0.0.1:17004/");
+        NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
+        //NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://127.0.0.1:17004/");
+    }
+
+    @Test
+    public void testStableSwapTradeTx() throws Exception {
+        String from = "TNVTdTSPVcqUCdfVYWwrbuRtZ1oM6GpSgsgF5";
+        String to = "TNVTdTSPNEpLq2wnbsBcD8UDTVMsArtkfxWgz";
+        String pairAddress = "TNVTdTSPRyJgExG4HQu5g1sVxhVVFcpCa6fqw";
+        String feeTo = "TNVTdTSPUR5vYdstWDHfn5P8MtHB6iZZw3Edv";
+        NerveToken[] tokensIn = new NerveToken[]{new NerveToken(5, 8), new NerveToken(5, 9)};
+        BigInteger[] amountsIn = new BigInteger[]{new BigInteger("800000000"), new BigInteger("300000000")};
+        String[] nonces = new String[]{"02003c812b5f0672", "050001f7ec6473df"};
+        //String[] nonces = null;
+        int tokenOutIndex = 2;
+        String remark = "swap test";
+        Map map = (Map) NerveSDKTool.stableSwapTradeTxOffline(from, to, tokensIn, amountsIn, nonces, tokenOutIndex, pairAddress, feeTo, remark).getData();
+        System.out.println(JSONUtils.obj2PrettyJson(map));
     }
 
     @Test
@@ -408,13 +428,16 @@ public class TransationServiceTest {
 
     @Test
     public void testTx() {
-        String txHex = "0b00c325c15d00e903626e620131055454424e428af8e801010300000003001747ef013e4954857e6fd078df53d73c70d029b5d3082f401747ef0169fdf4bd90d5e9f20bcba8cd77f05a6dae78fbb61747ef01728e8f8c34396600f424c6a371f9c9a136fd84cb4200c80047ef0100036e626e03626e6200205fa01200000000000000000000000000000000000000000000000000000000c817a8040000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000050017020001f7ec6473df12e751d64cf20a8baa7edd50810f81fd15010117020001f7ec6473df12e751d64cf20a8baa7edd50810f8102000100a03e66d94500000000000000000000000000000000000000000000000000000008000000000000000000031702000199092280b81a34b28901654601bbaa764ea0b385020001000040be4025000000000000000000000000000000000000000000000000000000000000000000000017020001f7ec6473df12e751d64cf20a8baa7edd50810f810200010000205fa012000000000000000000000000000000000000000000000000000000ffffffffffffffffff1702000129cfc6376255a78451eeb4b129ed8eacffa2feef02000100005847f80d0000000000000000000000000000000000000000000000000000000000000000000000692103958b790c331954ed367d37bac901de5c2f06ac8368b37d7bd6cd5ae143c1d7e3463044022038ea5240e0ac9a3aa8e3f682c8f3f2d4eab8983f150ab9d46377ef257bb26d9c02200a3b0ac2195990b4dd3e48c7fc8eb830835ada750ab79332a56edb12a386b943";
+        String txHex = "4800a55caf60097377617020746573742f0500017fe9a685e43b3124e00fd9c8e4e59158baea634502050001e45dc2d5ea7c4216baa277e5a7cee4ef6eb70c34fd16010217050001f7ec6473df12e751d64cf20a8baa7edd50810f81050008000008af2f0000000000000000000000000000000000000000000000000000000008474dccf734b498bc0017050001f7ec6473df12e751d64cf20a8baa7edd50810f810500090000a3e1110000000000000000000000000000000000000000000000000000000008cd94f9d0fa1132d4000217050001bc9cf2a09f0d1dbe7ab0a7dca2ccb87d12da6a99050008000008af2f00000000000000000000000000000000000000000000000000000000000000000000000017050001bc9cf2a09f0d1dbe7ab0a7dca2ccb87d12da6a990500090000a3e11100000000000000000000000000000000000000000000000000000000000000000000000000";
 
         try {
             Result result = NerveSDKTool.deserializeTxHex(txHex);
             Transaction tx = (Transaction) result.getData();
             tx.getCoinDataInstance();
             NerveSDKTool.validateTx(txHex);
+            StableSwapTradeData txData = new StableSwapTradeData();
+            txData.parse(tx.getTxData(), 0);
+            System.out.println();
 //            CoinData coinData = tx.getCoinDataInstance();
 //            for (CoinFrom from : coinData.getFrom()) {
 //                String fromAddress = AddressTool.getStringAddressByBytes(from.getAddress());

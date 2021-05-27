@@ -284,5 +284,9 @@ public class TxType {
      * 已注册跨链的链信息变更
      */
     public static final int REGISTERED_CHAIN_CHANGE = 60;
+    /**
+     * swap稳定币交易
+     */
+    public static final int SWAP_TRADE_STABLE_COIN = 72;
 
 }
