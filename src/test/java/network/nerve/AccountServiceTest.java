@@ -26,7 +26,7 @@ public class AccountServiceTest {
 
     @Before
     public void before() {
-        NerveSDKBootStrap.init(2, "tNULS", "");
+        NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://127.0.0.1:17004/");
     }
 
     @Test

@@ -1,6 +1,7 @@
 package network.nerve.kit.util;
 
 import network.nerve.SDKContext;
+import network.nerve.base.basic.AddressTool;
 import network.nerve.base.basic.TransactionFeeCalculator;
 import network.nerve.base.data.CoinFrom;
 import network.nerve.base.data.CoinTo;
@@ -15,13 +16,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static network.nerve.SDKContext.nuls_asset_id;
-import static network.nerve.SDKContext.nuls_chain_id;
+import static network.nerve.SDKContext.*;
 
 public class TxUtils {
 
     public static boolean isMainAsset(int chainId, int assetId) {
-        return chainId == SDKContext.main_chain_id && assetId == SDKContext.main_asset_id;
+        return chainId == main_chain_id && assetId == SDKContext.main_asset_id;
     }
 
     public static boolean isNulsAsset(int chainId, int assetId) {
@@ -30,18 +30,36 @@ public class TxUtils {
 
     public static void calcTxFee(List<CoinFrom> coinFroms, List<CoinTo> coinTos, int txSize) throws NulsException {
         BigInteger totalFrom = BigInteger.ZERO;
+        boolean fromAddressIsMain = true;
         for (CoinFrom coinFrom : coinFroms) {
+            if (fromAddressIsMain) {
+                // 判断from地址是否是主网地址
+                if (!AddressTool.validNormalAddress(coinFrom.getAddress(), main_chain_id)) {
+                    fromAddressIsMain = false;
+                }
+            }
             txSize += coinFrom.size();
             if (TxUtils.isMainAsset(coinFrom.getAssetsChainId(), coinFrom.getAssetsId())) {
                 totalFrom = totalFrom.add(coinFrom.getAmount());
             }
         }
         BigInteger totalTo = BigInteger.ZERO;
+        boolean toAddressIsMain = true;
         for (CoinTo coinTo : coinTos) {
+            if (toAddressIsMain) {
+                // 判断from地址是否是主网地址
+                if (!AddressTool.validNormalAddress(coinTo.getAddress(), main_chain_id)) {
+                    toAddressIsMain = false;
+                }
+            }
             txSize += coinTo.size();
             if (TxUtils.isMainAsset(coinTo.getAssetsChainId(), coinTo.getAssetsId())) {
                 totalTo = totalTo.add(coinTo.getAmount());
             }
+        }
+        if (fromAddressIsMain && toAddressIsMain) {
+            // 2021-4-25 都是主网无需验证手续费, 不收手续费
+            return;
         }
         //本交易预计收取的手续费
         BigInteger targetFee = TransactionFeeCalculator.getNormalTxFee(txSize);
