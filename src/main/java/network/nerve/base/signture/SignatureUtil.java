@@ -252,6 +252,34 @@ public class SignatureUtil {
     }
 
     /**
+     * 签名或者追加签名
+     *
+     * @param tx         交易
+     * @param signEckeys 需要生成普通签名的秘钥
+     */
+    public static void createOrAddTransactionSignture(Transaction tx, List<ECKey> signEckeys) throws Exception {
+        if (signEckeys == null || signEckeys.size() == 0) {
+            Log.error("TransactionSignature signEckeys is null!");
+            throw new NullPointerException();
+        }
+
+        List<P2PHKSignature> p2PHKSignatures;
+        TransactionSignature transactionSignature;
+        byte[] signBytes = tx.getTransactionSignature();
+        if (null != signBytes && signBytes.length > 0) {
+            // 如果已存在签名则追加签名
+            transactionSignature = Transaction.getInstance(signBytes, TransactionSignature.class);
+            p2PHKSignatures = transactionSignature.getP2PHKSignatures();
+        } else {
+            p2PHKSignatures = new ArrayList<>();
+            transactionSignature = new TransactionSignature();
+        }
+        p2PHKSignatures.addAll(createSignaturesByEckey(tx, signEckeys));
+        transactionSignature.setP2PHKSignatures(p2PHKSignatures);
+        tx.setTransactionSignature(transactionSignature.serialize());
+    }
+
+    /**
      * 生成交易多个传统签名（多地址转账可能会用到）
      *
      * @param tx     交易
