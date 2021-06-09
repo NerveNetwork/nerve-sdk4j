@@ -6,7 +6,7 @@
 
   <groupId>network.nerve</groupId>
   <artifactId>nerve-sdk4j</artifactId>
-  <version>1.0.14-SNAPSHOT</version>
+  <version>1.1.0</version>
 
   <name>nerve-sdk4j</name>
 
@@ -23,7 +23,7 @@
     </license>
   </licenses>
   <scm>
-    <tag>1.0.7-BETA</tag>
+    <tag>1.1.0</tag>
     <url>https://github.com/NerveNetwork/nerve-sdk4j</url>
     <connection>https://github.com/NerveNetwork/nerve-sdk4j.git</connection>
     <developerConnection>https://nerve.network</developerConnection>
@@ -194,7 +194,7 @@
       <build>
         <plugins>
 
-          <!--<plugin>
+          <plugin>
             <groupId>org.sonatype.plugins</groupId>
             <artifactId>nexus-staging-maven-plugin</artifactId>
             <version>1.6.8</version>
@@ -202,9 +202,9 @@
             <configuration>
               <serverId>nerve</serverId>
               <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>false</autoReleaseAfterClose>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
             </configuration>
-          </plugin>-->
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-release-plugin</artifactId>
