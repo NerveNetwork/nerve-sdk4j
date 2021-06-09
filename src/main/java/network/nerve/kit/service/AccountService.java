@@ -443,7 +443,7 @@ public class AccountService {
             }
             Transaction tx = new Transaction();
             tx.parse(new NulsByteBuffer(HexUtil.decode(txHex)));
-            SignatureUtil.createTransactionSignture(tx, signEcKeys);
+            SignatureUtil.createOrAddTransactionSignture(tx, signEcKeys);
 
             Map<String, Object> map = new HashMap<>();
             map.put("hash", tx.getHash().toHex());
@@ -451,7 +451,7 @@ public class AccountService {
             return Result.getSuccess(map);
         } catch (NulsException e) {
             return Result.getFailed(e.getErrorCode()).setMsg(e.format());
-        } catch (IOException e) {
+        } catch (Exception e) {
             return Result.getFailed(AccountErrorCode.SERIALIZE_ERROR).setMsg(AccountErrorCode.SERIALIZE_ERROR.getMsg());
         }
     }
