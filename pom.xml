@@ -6,7 +6,7 @@
 
   <groupId>network.nerve</groupId>
   <artifactId>nerve-sdk4j</artifactId>
-  <version>1.1.0-android</version>
+  <version>1.0.13-android-SNAPSHOT</version>
 
   <name>nerve-sdk4j</name>
 
@@ -16,41 +16,41 @@
     <version>7</version>
   </parent>
 
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-    </license>
-  </licenses>
-  <scm>
-    <tag>1.1.0-android</tag>
-    <url>https://github.com/NerveNetwork/nerve-sdk4j</url>
-    <connection>https://github.com/NerveNetwork/nerve-sdk4j.git</connection>
-    <developerConnection>https://nerve.network</developerConnection>
-  </scm>
-  <developers>
-    <developer>
-      <name>PierreLuo</name>
-      <email>luohao@nuls.io</email>
-      <organization>NerveNetwork</organization>
-    </developer>
-  </developers>
+<!--  <licenses>-->
+<!--    <license>-->
+<!--      <name>The Apache Software License, Version 2.0</name>-->
+<!--      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>-->
+<!--    </license>-->
+<!--  </licenses>-->
+<!--  <scm>-->
+<!--    <tag>1.1.0-android</tag>-->
+<!--    <url>https://github.com/NerveNetwork/nerve-sdk4j</url>-->
+<!--    <connection>https://github.com/NerveNetwork/nerve-sdk4j.git</connection>-->
+<!--    <developerConnection>https://nerve.network</developerConnection>-->
+<!--  </scm>-->
+<!--  <developers>-->
+<!--    <developer>-->
+<!--      <name>PierreLuo</name>-->
+<!--      <email>luohao@nuls.io</email>-->
+<!--      <organization>NerveNetwork</organization>-->
+<!--    </developer>-->
+<!--  </developers>-->
 
-  <distributionManagement>
-    <snapshotRepository>
-      <!-- 这个id需要在setting.xml中设置  -->
-      <id>nerve</id>
-      <name>OSS Snapshots Repository</name>
-      <!-- 这里的url就是Issue中回复的snapshots 的repo地址-->
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>nerve</id>
-      <name>OSS Staging Repository</name>
-      <!-- 这里的url就是Issue中回复的staging 的repo地址-->
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-    </repository>
-  </distributionManagement>
+<!--  <distributionManagement>-->
+<!--    <snapshotRepository>-->
+<!--      &lt;!&ndash; 这个id需要在setting.xml中设置  &ndash;&gt;-->
+<!--      <id>nerve</id>-->
+<!--      <name>OSS Snapshots Repository</name>-->
+<!--      &lt;!&ndash; 这里的url就是Issue中回复的snapshots 的repo地址&ndash;&gt;-->
+<!--      <url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+<!--    </snapshotRepository>-->
+<!--    <repository>-->
+<!--      <id>nerve</id>-->
+<!--      <name>OSS Staging Repository</name>-->
+<!--      &lt;!&ndash; 这里的url就是Issue中回复的staging 的repo地址&ndash;&gt;-->
+<!--      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>-->
+<!--    </repository>-->
+<!--  </distributionManagement>-->
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -300,7 +300,7 @@
     </plugins>
   </build>
 
-  <!--<distributionManagement>
+  <distributionManagement>
     <repository>
       <id>maven-releases</id>
       <url>http://nexus.nuls.center/nexus/content/repositories/releases/</url>
@@ -309,5 +309,5 @@
       <id>maven-snapshots</id>
       <url>http://nexus.nuls.center/nexus/content/repositories/snapshots/</url>
     </snapshotRepository>
-  </distributionManagement>-->
+  </distributionManagement>
 </project>
