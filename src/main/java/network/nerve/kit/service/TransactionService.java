@@ -478,10 +478,11 @@ public class TransactionService {
             return Result.getFailed(accountNvtBalanceFeeR.getErrorCode()).setMsg(accountNvtBalanceFeeR.getMsg());
         }
         Map balanceNvtFee = (Map) accountNvtBalanceFeeR.getData();
-        BigInteger senderNvtBalanceFee = new BigInteger(balanceNvtFee.get("available").toString());
+       /* 不验证余额
+       BigInteger senderNvtBalanceFee = new BigInteger(balanceNvtFee.get("available").toString());
         if (senderNvtBalanceFee.compareTo(feeNvtNeed) < 0) {
             return Result.getFailed(AccountErrorCode.INSUFFICIENT_FEE);
-        }
+        }*/
         String nonceNvtFee = balanceNvtFee.get("nonce").toString();
 
         /* NULS手续费 资产信息**/
@@ -490,10 +491,11 @@ public class TransactionService {
             return Result.getFailed(accountNulsBalanceFeeR.getErrorCode()).setMsg(accountNulsBalanceFeeR.getMsg());
         }
         Map balanceNulsFee = (Map) accountNulsBalanceFeeR.getData();
+      /*  不验证余额
         BigInteger senderNulsBalanceFee = new BigInteger(balanceNulsFee.get("available").toString());
         if (senderNulsBalanceFee.compareTo(feeNulsNeed) < 0) {
             return Result.getFailed(AccountErrorCode.INSUFFICIENT_FEE);
-        }
+        }*/
         String nonceNulsFee = balanceNulsFee.get("nonce").toString();
 
         //NVT手续费资产
@@ -604,10 +606,11 @@ public class TransactionService {
             return Result.getFailed(accountNulsBalanceFeeR.getErrorCode()).setMsg(accountNulsBalanceFeeR.getMsg());
         }
         Map balanceNulsFee = (Map) accountNulsBalanceFeeR.getData();
+      /* 不验证余额
         BigInteger senderNulsBalanceFee = new BigInteger(balanceNulsFee.get("available").toString());
         if (senderNulsBalanceFee.compareTo(feeNulsNeed) < 0) {
             return Result.getFailed(AccountErrorCode.INSUFFICIENT_FEE);
-        }
+        }*/
         String nonceNulsFee = balanceNulsFee.get("nonce").toString();
 
         //NULS手续费资产
@@ -708,9 +711,10 @@ public class TransactionService {
         Map balanceNulsFee = (Map) accountNulsBalanceFeeR.getData();
         BigInteger senderNulsBalanceFee = new BigInteger(balanceNulsFee.get("available").toString());
         BigInteger amountTotal = amount.add(feeNulsNeed);
-        if (senderNulsBalanceFee.compareTo(amountTotal) < 0) {
+      /*  不验证余额
+       if (senderNulsBalanceFee.compareTo(amountTotal) < 0) {
             return Result.getFailed(AccountErrorCode.INSUFFICIENT_FEE);
-        }
+        }*/
         String nonceNulsFee = balanceNulsFee.get("nonce").toString();
 
         //NULS手续费+转账数量
