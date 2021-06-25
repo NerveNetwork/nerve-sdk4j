@@ -6,7 +6,7 @@
 
   <groupId>network.nerve</groupId>
   <artifactId>nerve-sdk4j</artifactId>
-  <version>1.0.13-android-SNAPSHOT</version>
+  <version>1.0.14-android-SNAPSHOT</version>
 
   <name>nerve-sdk4j</name>
 
