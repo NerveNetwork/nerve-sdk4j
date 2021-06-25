@@ -5,6 +5,7 @@ import network.nerve.base.data.Transaction;
 import network.nerve.core.basic.Result;
 import network.nerve.core.parse.JSONUtils;
 import network.nerve.kit.model.NerveToken;
+import network.nerve.kit.model.NerveTokenAmount;
 import network.nerve.kit.model.dto.*;
 import network.nerve.kit.txdata.StableSwapTradeData;
 import network.nerve.kit.util.NerveSDKTool;
@@ -35,18 +36,30 @@ public class TransationServiceTest {
 
     @Test
     public void testStableSwapTradeTx() throws Exception {
-        String from = "TNVTdTSPVcqUCdfVYWwrbuRtZ1oM6GpSgsgF5";
-        String to = "TNVTdTSPNEpLq2wnbsBcD8UDTVMsArtkfxWgz";
-        String pairAddress = "TNVTdTSPRyJgExG4HQu5g1sVxhVVFcpCa6fqw";
-        String feeTo = "TNVTdTSPUR5vYdstWDHfn5P8MtHB6iZZw3Edv";
-        NerveToken[] tokensIn = new NerveToken[]{new NerveToken(5, 8), new NerveToken(5, 9)};
-        BigInteger[] amountsIn = new BigInteger[]{new BigInteger("800000000"), new BigInteger("300000000")};
-        String[] nonces = new String[]{"02003c812b5f0672", "050001f7ec6473df"};
-        //String[] nonces = null;
-        int tokenOutIndex = 2;
-        String remark = "swap test";
-        Map map = (Map) NerveSDKTool.stableSwapTradeTxOffline(from, to, tokensIn, amountsIn, nonces, tokenOutIndex, pairAddress, feeTo, remark).getData();
-        System.out.println(JSONUtils.obj2PrettyJson(map));
+        // 组装交易
+        String from = "TNVTdTSPRMtpGNYRx98WkoqKnExU9pWDQjNPf";// 账户地址
+        String to = "TNVTdTSPNEpLq2wnbsBcD8UDTVMsArtkfxWgz";// 资产接收地址
+        String pairAddress = "TNVTdTSPRyJgExG4HQu5g1sVxhVVFcpCa6fqw";// pair地址
+        String feeTo = "TNVTdTSPUR5vYdstWDHfn5P8MtHB6iZZw3Edv";// 交易手续费取出一部分给指定的接收地址
+        NerveTokenAmount[] tokenAmountIns = new NerveTokenAmount[]{
+                new NerveTokenAmount(5, 8, new BigInteger("800000000")),
+                new NerveTokenAmount(5, 9, new BigInteger("300000000"))};// 卖出的资产，假设5-8是usdt_eth, 5-9是usdt_bsc，则此处代表用户卖出usdt_eth和usdt_bsc
+        int tokenOutIndex = 2;// 买进的资产索引(示例: 假设交易对是[usdt_eth, usdt_bsc, usdt_heco, usdt_okt]，用户想买进heco的usdt，则此处填2)
+        String remark = "swap test";// 交易备注
+        Map map = (Map) NerveSDKTool.stableSwapTradeTx(from, to, tokenAmountIns, tokenOutIndex, pairAddress, feeTo, remark).getData();
+
+        String txHex = map.get("txHex").toString();
+        // 私钥签名交易
+        String prikey = "76b7beaa98db863fb680def099af872978209ed9422b7acab8ab57ad95ab218b";
+        Result<Map> result = NerveSDKTool.sign(txHex, from, prikey);
+        txHex = (String) result.getData().get("txHex");
+        String txHash = (String) result.getData().get("hash");
+        System.out.println(String.format("交易序列化Hex字符串: %s", txHex));
+        System.out.println(String.format("交易hash: %s", txHash));
+
+        // 广播交易
+        result = NerveSDKTool.broadcast(txHex);
+        System.out.println(JSONUtils.obj2PrettyJson(result));
     }
 
     @Test

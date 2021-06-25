@@ -11,6 +11,7 @@ import network.nerve.core.crypto.HexUtil;
 import network.nerve.core.exception.NulsException;
 import network.nerve.core.rpc.model.*;
 import network.nerve.kit.model.NerveToken;
+import network.nerve.kit.model.NerveTokenAmount;
 import network.nerve.kit.model.annotation.ApiOperation;
 import network.nerve.kit.model.dto.*;
 import network.nerve.kit.service.AccountService;
@@ -977,41 +978,14 @@ public class NerveSDKTool {
     }
 
     /**
-     * Stable-Swap稳定币兑换交易（完全离线状态）
-     */
-    @ApiOperation(description = "Stable-Swap稳定币兑换交易（完全离线状态）", order = 372, detailDesc = "Stable-Swap稳定币兑换交易（完全离线状态）")
-    @Parameters({
-            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
-            @Parameter(parameterName = "to", parameterType = "String", parameterDes = "资产接收地址"),
-            @Parameter(parameterName = "tokensIn", parameterType = "NerveToken[]", parameterDes = "卖出的资产类型列表"),
-            @Parameter(parameterName = "amountsIn", parameterType = "String[]", parameterDes = "卖出的资产数量列表"),
-            @Parameter(parameterName = "nonces", parameterType = "String[]", parameterDes = "卖出的资产nonce列表"),
-            @Parameter(parameterName = "tokenOutIndex", parameterType = "int", parameterDes = "买进的资产索引"),
-            @Parameter(parameterName = "pairAddress", parameterType = "String", parameterDes = "交易对地址"),
-            @Parameter(parameterName = "feeTo", parameterType = "String", parameterDes = "交易手续费取出一部分给指定的接收地址"),
-            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
-    })
-    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
-            @Key(name = "hash", description = "交易hash"),
-            @Key(name = "txHex", description = "交易序列化16进制字符串")
-    }))
-    public static Result stableSwapTradeTxOffline(String from, String to,
-                                            NerveToken[] tokensIn, BigInteger[] amountsIn, String[] nonces,
-                                            int tokenOutIndex, String pairAddress,
-                                            String feeTo, String remark) {
-        return transactionService.stableSwapTradeTx(from, to, tokensIn, amountsIn, nonces, tokenOutIndex, pairAddress, feeTo, remark);
-    }
-
-    /**
      * Stable-Swap稳定币兑换交易
      */
-    @ApiOperation(description = "Stable-Swap稳定币兑换交易", order = 373, detailDesc = "Stable-Swap稳定币兑换交易")
+    @ApiOperation(description = "Stable-Swap稳定币兑换交易", order = 372, detailDesc = "Stable-Swap稳定币兑换交易")
     @Parameters({
             @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
             @Parameter(parameterName = "to", parameterType = "String", parameterDes = "资产接收地址"),
-            @Parameter(parameterName = "tokensIn", parameterType = "NerveToken[]", parameterDes = "卖出的资产类型列表"),
-            @Parameter(parameterName = "amountsIn", parameterType = "String[]", parameterDes = "卖出的资产数量列表"),
-            @Parameter(parameterName = "tokenOutIndex", parameterType = "int", parameterDes = "买进的资产索引"),
+            @Parameter(parameterName = "tokenAmountIns", parameterType = "NerveTokenAmount[]", parameterDes = "卖出的资产数量列表"),
+            @Parameter(parameterName = "tokenOutIndex", parameterType = "int", parameterDes = "买进的资产索引(示例: 假设交易对是[usdt_eth, usdt_bsc, usdt_heco, usdt_okt]，用户想买进heco的usdt，则此处填2)"),
             @Parameter(parameterName = "pairAddress", parameterType = "String", parameterDes = "交易对地址"),
             @Parameter(parameterName = "feeTo", parameterType = "String", parameterDes = "交易手续费取出一部分给指定的接收地址"),
             @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
@@ -1021,10 +995,10 @@ public class NerveSDKTool {
             @Key(name = "txHex", description = "交易序列化16进制字符串")
     }))
     public static Result stableSwapTradeTx(String from, String to,
-                                            NerveToken[] tokensIn, BigInteger[] amountsIn,
+                                           NerveTokenAmount[] tokenAmountIns,
                                             int tokenOutIndex, String pairAddress,
                                             String feeTo, String remark) {
-        return stableSwapTradeTxOffline(from, to, tokensIn, amountsIn, null, tokenOutIndex, pairAddress, feeTo, remark);
+        return transactionService.stableSwapTradeTx(from, to, tokenAmountIns, null, tokenOutIndex, pairAddress, feeTo, remark);
     }
 
 }

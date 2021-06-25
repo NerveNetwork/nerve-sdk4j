@@ -19,6 +19,7 @@ import network.nerve.kit.constant.AccountConstant;
 import network.nerve.kit.constant.Constant;
 import network.nerve.kit.error.AccountErrorCode;
 import network.nerve.kit.model.NerveToken;
+import network.nerve.kit.model.NerveTokenAmount;
 import network.nerve.kit.model.dto.*;
 import network.nerve.kit.txdata.*;
 import network.nerve.kit.util.*;
@@ -898,19 +899,18 @@ public class TransactionService {
     /**
      * Stable-Swap稳定币兑换交易
      *
-     * @param from          用户地址
-     * @param to            接收地址
-     * @param tokensIn      卖出的资产类型列表
-     * @param amountsIn     卖出的资产数量列表
-     * @param nonces        卖出的资产nonce列表
-     * @param tokenOutIndex 买进的资产索引
-     * @param pairAddress   交易对地址
-     * @param feeTo         交易手续费取出一部分给指定的接收地址（当前未收取手续费）
-     * @param remark        交易备注
+     * @param from              用户地址
+     * @param to                接收地址
+     * @param tokenAmountIns    卖出的资产数量列表
+     * @param nonces            卖出的资产nonce列表
+     * @param tokenOutIndex     买进的资产索引
+     * @param pairAddress       交易对地址
+     * @param feeTo             交易手续费取出一部分给指定的接收地址（当前未收取手续费）
+     * @param remark            交易备注
      * @return
      */
     public Result stableSwapTradeTx(String from, String to,
-                                    NerveToken[] tokensIn, BigInteger[] amountsIn, String[] nonces,
+                                    NerveTokenAmount[] tokenAmountIns, String[] nonces,
                                     int tokenOutIndex, String pairAddress,
                                     String feeTo, String remark) {
         try {
@@ -930,11 +930,11 @@ public class TransactionService {
             CoinData coinData = new CoinData();
             List<CoinFrom> froms = coinData.getFrom();
             List<CoinTo> tos = coinData.getTo();
-            int length = tokensIn.length;
-            nonces = this.checkNonces(from, tokensIn, nonces);
+            int length = tokenAmountIns.length;
+            nonces = this.checkNonces(from, tokenAmountIns, nonces);
             for (int i = 0; i < length; i++) {
-                NerveToken token = tokensIn[i];
-                BigInteger amount = amountsIn[i];
+                NerveTokenAmount token = tokenAmountIns[i];
+                BigInteger amount = token.getAmount();
                 String nonce = nonces[i];
                 froms.add(new CoinFrom(
                         fromBytes,
@@ -960,14 +960,14 @@ public class TransactionService {
         }
     }
 
-    private String[] checkNonces(String address, NerveToken[] tokens, String[] nonces) throws NulsException {
+    private String[] checkNonces(String address, NerveTokenAmount[] tokens, String[] nonces) throws NulsException {
         if (nonces != null) {
             return nonces;
         }
         int length = tokens.length;
         nonces = new String[length];
         for (int i = 0; i < length; i++) {
-            NerveToken token = tokens[i];
+            NerveTokenAmount token = tokens[i];
             Result accountBalance = NerveSDKTool.getAccountBalance(address, token.getChainId(), token.getAssetId());
             if (!accountBalance.isSuccess()) {
                 throw new NulsException(AccountErrorCode.NOT_FOUND_NONCE);
