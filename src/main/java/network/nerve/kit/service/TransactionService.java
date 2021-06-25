@@ -18,6 +18,7 @@ import network.nerve.core.rpc.util.NulsDateUtils;
 import network.nerve.kit.constant.AccountConstant;
 import network.nerve.kit.constant.Constant;
 import network.nerve.kit.error.AccountErrorCode;
+import network.nerve.kit.model.NerveToken;
 import network.nerve.kit.model.dto.*;
 import network.nerve.kit.txdata.*;
 import network.nerve.kit.util.*;
@@ -136,6 +137,7 @@ public class TransactionService {
     /**
      * 计算跨链交易手续费
      * 包含本链资产手续费与NULS链手续费
+     *
      * @param dto
      * @return
      */
@@ -167,8 +169,8 @@ public class TransactionService {
      * <p>
      * 如果需要完整信息或结构更复杂的转账（比如多账户），请使用完全版的离线交易组装
      *
-     * @param fromAddress 转出地址（NERVE地址）
-     * @param toAddress   转入地址（NERVE地址）
+     * @param fromAddress  转出地址（NERVE地址）
+     * @param toAddress    转入地址（NERVE地址）
      * @param assetChainId
      * @param assetId
      * @param amount
@@ -539,8 +541,8 @@ public class TransactionService {
      * <p>
      * 如果需要完整信息或结构更复杂的转账（比如多账户），请使用完全版的离线交易组装
      *
-     * @param fromAddress  转出地址（当前链地址）
-     * @param toAddress    转入地址（NULS地址）
+     * @param fromAddress 转出地址（当前链地址）
+     * @param toAddress   转入地址（NULS地址）
      * @param amount
      * @return
      */
@@ -555,8 +557,8 @@ public class TransactionService {
      * <p>
      * 如果需要完整信息或结构更复杂的转账（比如多账户），请使用完全版的离线交易组装
      *
-     * @param fromAddress  转出地址（当前链地址）
-     * @param toAddress    转入地址（NULS地址）
+     * @param fromAddress 转出地址（当前链地址）
+     * @param toAddress   转入地址（NULS地址）
      * @param amount
      * @param time
      * @param remark
@@ -644,8 +646,8 @@ public class TransactionService {
      * <p>
      * 如果需要完整信息或结构更复杂的转账（比如多账户），请使用完全版的离线交易组装
      *
-     * @param fromAddress  转出地址（当前链地址）
-     * @param toAddress    转入地址（NULS地址）
+     * @param fromAddress 转出地址（当前链地址）
+     * @param toAddress   转入地址（NULS地址）
      * @param amount
      * @return
      */
@@ -660,8 +662,8 @@ public class TransactionService {
      * <p>
      * 如果需要完整信息或结构更复杂的转账（比如多账户），请使用完全版的离线交易组装
      *
-     * @param fromAddress  转出地址（当前链地址）
-     * @param toAddress    转入地址（NULS地址）
+     * @param fromAddress 转出地址（当前链地址）
+     * @param toAddress   转入地址（NULS地址）
      * @param amount
      * @param time
      * @param remark
@@ -803,6 +805,7 @@ public class TransactionService {
     /**
      * 提现
      * 异构跨链转出 收取nvt作为手续费
+     *
      * @param withdrawalTxDto
      * @return
      */
@@ -841,6 +844,7 @@ public class TransactionService {
 
     /**
      * 追加异构提现手续费
+     *
      * @param fromAddress
      * @param txHash
      * @param amount
@@ -891,6 +895,88 @@ public class TransactionService {
         }
     }
 
+    /**
+     * Stable-Swap稳定币兑换交易
+     *
+     * @param from          用户地址
+     * @param to            接收地址
+     * @param tokensIn      卖出的资产类型列表
+     * @param amountsIn     卖出的资产数量列表
+     * @param nonces        卖出的资产nonce列表
+     * @param tokenOutIndex 买进的资产索引
+     * @param pairAddress   交易对地址
+     * @param feeTo         交易手续费取出一部分给指定的接收地址（当前未收取手续费）
+     * @param remark        交易备注
+     * @return
+     */
+    public Result stableSwapTradeTx(String from, String to,
+                                    NerveToken[] tokensIn, BigInteger[] amountsIn, String[] nonces,
+                                    int tokenOutIndex, String pairAddress,
+                                    String feeTo, String remark) {
+        try {
+            byte[] pairAddressBytes = AddressTool.getAddress(pairAddress);
+            byte[] fromBytes = AddressTool.getAddress(from);
+            // 组装交易
+            StableSwapTradeData data = new StableSwapTradeData();
+            data.setTo(AddressTool.getAddress(to));
+            data.setTokenOutIndex((byte) tokenOutIndex);
+            data.setFeeTo(feeTo != null ? AddressTool.getAddress(feeTo) : null);
+
+            Transaction tx = new Transaction(TxType.SWAP_TRADE_STABLE_COIN);
+            tx.setTxData(TxUtils.nulsData2HexBytes(data));
+            tx.setTime(NulsDateUtils.getCurrentTimeSeconds());
+            tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
+
+            CoinData coinData = new CoinData();
+            List<CoinFrom> froms = coinData.getFrom();
+            List<CoinTo> tos = coinData.getTo();
+            int length = tokensIn.length;
+            nonces = this.checkNonces(from, tokensIn, nonces);
+            for (int i = 0; i < length; i++) {
+                NerveToken token = tokensIn[i];
+                BigInteger amount = amountsIn[i];
+                String nonce = nonces[i];
+                froms.add(new CoinFrom(
+                        fromBytes,
+                        token.getChainId(),
+                        token.getAssetId(),
+                        amount,
+                        HexUtil.decode(nonce),
+                        (byte) 0));
+                tos.add(new CoinTo(
+                        pairAddressBytes,
+                        token.getChainId(),
+                        token.getAssetId(),
+                        amount));
+            }
+            tx.setCoinData(TxUtils.nulsData2HexBytes(coinData));
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("hash", tx.getHash().toHex());
+            map.put("txHex", HexUtil.encode(TxUtils.nulsData2HexBytes(tx)));
+            return Result.getSuccess(map);
+        } catch (NulsException e) {
+            return Result.getFailed(e.getErrorCode()).setMsg(e.format());
+        }
+    }
+
+    private String[] checkNonces(String address, NerveToken[] tokens, String[] nonces) throws NulsException {
+        if (nonces != null) {
+            return nonces;
+        }
+        int length = tokens.length;
+        nonces = new String[length];
+        for (int i = 0; i < length; i++) {
+            NerveToken token = tokens[i];
+            Result accountBalance = NerveSDKTool.getAccountBalance(address, token.getChainId(), token.getAssetId());
+            if (!accountBalance.isSuccess()) {
+                throw new NulsException(AccountErrorCode.NOT_FOUND_NONCE);
+            }
+            Map balance = (Map) accountBalance.getData();
+            nonces[i] = balance.get("nonce").toString();
+        }
+        return nonces;
+    }
 
     /**
      * 组装提现交易CoinData
@@ -1066,7 +1152,7 @@ public class TransactionService {
      * 组装追加提现手续费（CoinData）
      *
      * @param address
-     * @param extraFee       向公共手续费收集地址 支付额外的业务费用(例如提案费用等), 用于后续费用的补偿
+     * @param extraFee 向公共手续费收集地址 支付额外的业务费用(例如提案费用等), 用于后续费用的补偿
      * @return
      * @throws NulsException
      */
@@ -1151,8 +1237,6 @@ public class TransactionService {
             throw new NulsException(AccountErrorCode.SERIALIZE_ERROR);
         }
     }
-
-
 
 
     public Result createMultiSignTransferTx(MultiSignTransferDto transferDto) {

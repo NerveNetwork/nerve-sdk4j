@@ -3,14 +3,17 @@ package network.nerve.kit.util;
 import network.nerve.SDKContext;
 import network.nerve.base.basic.AddressTool;
 import network.nerve.base.basic.TransactionFeeCalculator;
+import network.nerve.base.data.BaseNulsData;
 import network.nerve.base.data.CoinFrom;
 import network.nerve.base.data.CoinTo;
 import network.nerve.base.signture.P2PHKSignature;
 import network.nerve.core.exception.NulsException;
+import network.nerve.core.exception.NulsRuntimeException;
 import network.nerve.core.model.BigIntegerUtils;
 import network.nerve.core.model.StringUtils;
 import network.nerve.kit.error.AccountErrorCode;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
@@ -119,5 +122,13 @@ public class TxUtils {
         byte[] targetArr = new byte[8];
         System.arraycopy(txHash, txHash.length - 8, targetArr, 0, 8);
         return targetArr;
+    }
+
+    public static byte[] nulsData2HexBytes(BaseNulsData nulsData) {
+        try {
+            return nulsData.serialize();
+        } catch (IOException e) {
+            throw new NulsRuntimeException(e);
+        }
     }
 }
