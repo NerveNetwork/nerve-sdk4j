@@ -36,15 +36,53 @@ public class TransationServiceTest {
 
     @Test
     public void testStableSwapTradeTx() throws Exception {
+        /*
+         交易对基础信息
+         {
+            "address": "TNVTdTSQnXngR4HNnsH2w9kBUwZ8ciKaov2Ui",
+            "tokenLP": {
+                "assetChainId": 5,
+                "assetId": 26,
+                "name": "STABLE_PAIR_USDT",
+                "symbol": "STABLE_PAIR_USDT",
+                "decimals": 18
+            },
+            "coins": [
+                {
+                    "assetChainId": 5,
+                    "assetId": 7,
+                    "name": "USDT",
+                    "symbol": "USDT",
+                    "decimals": 6
+                },
+                {
+                    "assetChainId": 5,
+                    "assetId": 23,
+                    "name": "BUSD",
+                    "symbol": "BUSD",
+                    "decimals": 18
+                },
+                {
+                    "assetChainId": 5,
+                    "assetId": 24,
+                    "name": "HUSD",
+                    "symbol": "HUSD",
+                    "decimals": 8
+                }
+            ]
+        }
+         */
         // 组装交易
         String from = "TNVTdTSPRMtpGNYRx98WkoqKnExU9pWDQjNPf";// 账户地址
-        String to = "TNVTdTSPNEpLq2wnbsBcD8UDTVMsArtkfxWgz";// 资产接收地址
-        String pairAddress = "TNVTdTSPRyJgExG4HQu5g1sVxhVVFcpCa6fqw";// pair地址
-        String feeTo = "TNVTdTSPUR5vYdstWDHfn5P8MtHB6iZZw3Edv";// 交易手续费取出一部分给指定的接收地址
+        String to = "TNVTdTSPRMtpGNYRx98WkoqKnExU9pWDQjNPf";// 资产接收地址
+        String pairAddress = "TNVTdTSQnXngR4HNnsH2w9kBUwZ8ciKaov2Ui";// pair地址
+        String feeTo = null;// (暂无)交易手续费取出一部分给指定的接收地址
+        // 卖出的资产，5-7是usdt_eth，则此处代表用户卖出usdt_eth，支持同时卖出多个资产
+        // 这里卖出0.2个, usdt_eth的decimals是6, 这里填入的卖出金额要乘以10的6次方
         NerveTokenAmount[] tokenAmountIns = new NerveTokenAmount[]{
-                new NerveTokenAmount(5, 8, new BigInteger("800000000")),
-                new NerveTokenAmount(5, 9, new BigInteger("300000000"))};// 卖出的资产，假设5-8是usdt_eth, 5-9是usdt_bsc，则此处代表用户卖出usdt_eth和usdt_bsc
-        int tokenOutIndex = 2;// 买进的资产索引(示例: 假设交易对是[usdt_eth, usdt_bsc, usdt_heco, usdt_okt]，用户想买进heco的usdt，则此处填2)
+                    new NerveTokenAmount(5, 7, new BigInteger("200000"))
+                };
+        int tokenOutIndex = 2;// 买进的资产索引(示例: 交易对是[usdt_eth, usdt_bsc, usdt_heco]，用户想买进heco的usdt，则此处填2)
         String remark = "swap test";// 交易备注
         Map map = (Map) NerveSDKTool.stableSwapTradeTx(from, to, tokenAmountIns, tokenOutIndex, pairAddress, feeTo, remark).getData();
 
