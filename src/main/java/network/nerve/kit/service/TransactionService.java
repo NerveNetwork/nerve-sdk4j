@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static network.nerve.kit.constant.AccountConstant.ALIAS_FEE;
+import static network.nerve.kit.util.TxUtils.addressToLowerCase;
 import static network.nerve.kit.util.ValidateUtil.validateChainId;
 
 public class TransactionService {
@@ -814,7 +815,7 @@ public class TransactionService {
         validateChainId();
         try {
             CommonValidator.checkWithdrawalTxDto(withdrawalTxDto);
-            WithdrawalTxData txData = new WithdrawalTxData(withdrawalTxDto.getHeterogeneousAddress().toLowerCase());
+            WithdrawalTxData txData = new WithdrawalTxData(addressToLowerCase(withdrawalTxDto.getHeterogeneousAddress()));
             txData.setHeterogeneousChainId(withdrawalTxDto.getHeterogeneousChainId());
 
             byte[] txDataBytes = null;

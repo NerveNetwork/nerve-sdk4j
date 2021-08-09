@@ -23,6 +23,8 @@ import static network.nerve.SDKContext.*;
 
 public class TxUtils {
 
+    private static final String HEX_REGEX="^[A-Fa-f0-9]+$";
+
     public static boolean isMainAsset(int chainId, int assetId) {
         return chainId == main_chain_id && assetId == SDKContext.main_asset_id;
     }
@@ -130,5 +132,22 @@ public class TxUtils {
         } catch (IOException e) {
             throw new NulsRuntimeException(e);
         }
+    }
+
+    public static boolean isHexStr(String str) {
+        if(StringUtils.isBlank(str)) {
+            return false;
+        }
+        return str.matches(HEX_REGEX);
+    }
+
+    public static String addressToLowerCase(String address) {
+        if (StringUtils.isBlank(address)) {
+            return address;
+        }
+        if (isHexStr(address)) {
+            address = address.toLowerCase();
+        }
+        return address;
     }
 }
