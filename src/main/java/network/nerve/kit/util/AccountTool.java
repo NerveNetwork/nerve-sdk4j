@@ -92,7 +92,7 @@ public class AccountTool {
         account.setPubKey(key.getPubKey());
         account.setPriKey(key.getPrivKeyBytes());
         account.setEncryptedPriKey(new byte[0]);
-        account.setCreateTime(NulsDateUtils.getCurrentTimeMillis());
+        account.setCreateTime(System.currentTimeMillis());
         account.setEcKey(key);
         return account;
     }
@@ -115,7 +115,7 @@ public class AccountTool {
         account.setPubKey(key.getPubKey());
         account.setPriKey(key.getPrivKeyBytes());
         account.setEncryptedPriKey(new byte[0]);
-        account.setCreateTime(NulsDateUtils.getCurrentTimeMillis());
+        account.setCreateTime(System.currentTimeMillis());
         account.setEcKey(key);
         return account;
     }
@@ -138,7 +138,7 @@ public class AccountTool {
         account.setPubKey(key.getPubKey());
         account.setPriKey(key.getPrivKeyBytes());
         account.setEncryptedPriKey(new byte[0]);
-        account.setCreateTime(NulsDateUtils.getCurrentTimeMillis());
+        account.setCreateTime(System.currentTimeMillis());
         account.setEcKey(key);
         return account;
     }
@@ -161,7 +161,7 @@ public class AccountTool {
         account.setPubKey(key.getPubKey());
         account.setPriKey(key.getPrivKeyBytes());
         account.setEncryptedPriKey(new byte[0]);
-        account.setCreateTime(NulsDateUtils.getCurrentTimeMillis());
+        account.setCreateTime(System.currentTimeMillis());
         account.setEcKey(key);
         return account;
     }
