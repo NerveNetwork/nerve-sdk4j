@@ -3,14 +3,17 @@ package network.nerve.kit.util;
 import network.nerve.SDKContext;
 import network.nerve.base.basic.AddressTool;
 import network.nerve.base.basic.TransactionFeeCalculator;
+import network.nerve.base.data.BaseNulsData;
 import network.nerve.base.data.CoinFrom;
 import network.nerve.base.data.CoinTo;
 import network.nerve.base.signture.P2PHKSignature;
 import network.nerve.core.exception.NulsException;
+import network.nerve.core.exception.NulsRuntimeException;
 import network.nerve.core.model.BigIntegerUtils;
 import network.nerve.core.model.StringUtils;
 import network.nerve.kit.error.AccountErrorCode;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +22,8 @@ import java.util.Map;
 import static network.nerve.SDKContext.*;
 
 public class TxUtils {
+
+    private static final String HEX_REGEX="^[A-Fa-f0-9]+$";
 
     public static boolean isMainAsset(int chainId, int assetId) {
         return chainId == main_chain_id && assetId == SDKContext.main_asset_id;
@@ -119,5 +124,39 @@ public class TxUtils {
         byte[] targetArr = new byte[8];
         System.arraycopy(txHash, txHash.length - 8, targetArr, 0, 8);
         return targetArr;
+    }
+
+    public static byte[] nulsData2HexBytes(BaseNulsData nulsData) {
+        try {
+            return nulsData.serialize();
+        } catch (IOException e) {
+            throw new NulsRuntimeException(e);
+        }
+    }
+
+    public static boolean isHexStr(String str) {
+        if(StringUtils.isBlank(str)) {
+            return false;
+        }
+        return str.matches(HEX_REGEX);
+    }
+
+    public static String addressToLowerCase(String address) {
+        if (StringUtils.isBlank(address)) {
+            return address;
+        }
+        String validAddress = cleanHexPrefix(address);
+        if (isHexStr(validAddress)) {
+            address = address.toLowerCase();
+        }
+        return address;
+    }
+
+    public static String cleanHexPrefix(String input) {
+        return containsHexPrefix(input) ? input.substring(2) : input;
+    }
+
+    public static boolean containsHexPrefix(String input) {
+        return !StringUtils.isBlank(input) && input.length() > 1 && input.charAt(0) == '0' && input.charAt(1) == 'x';
     }
 }

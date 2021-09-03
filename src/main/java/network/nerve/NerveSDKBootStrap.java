@@ -107,7 +107,12 @@ public class NerveSDKBootStrap {
         if (chainId < 1 || chainId > 65535) {
             throw new RuntimeException("[defaultChainId] is invalid");
         }
-        SDKContext.main_chain_id = chainId;
         I18nUtils.loadLanguage(NerveSDKBootStrap.class, LANGUAGE_PATH, LANGUAGE);
+        SDKContext.main_chain_id = chainId;
+        if (chainId == 5) {
+            SDKContext.addressPrefix = "TNVT";
+        } else if (chainId > 2 && chainId != 9 && "NERVE".equals(SDKContext.addressPrefix)) {
+            SDKContext.addressPrefix = "";
+        }
     }
 }
