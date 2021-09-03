@@ -924,7 +924,7 @@ public class TransactionService {
 
             Transaction tx = new Transaction(TxType.SWAP_TRADE_STABLE_COIN);
             tx.setTxData(TxUtils.nulsData2HexBytes(data));
-            tx.setTime(NulsDateUtils.getCurrentTimeSeconds());
+            tx.setTime(getCurrentTimeSeconds());
             tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
 
             CoinData coinData = new CoinData();
