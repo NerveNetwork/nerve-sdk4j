@@ -80,8 +80,7 @@ public class NerveSDKBootStrap {
     }
 
     /**
-     * NULS-SDK工具连接NULS测试网钱包初始化
-     * 设置测试网钱包NULS-SDK-Provider模块的url访问地址
+     * SDK工具连接测试网钱包初始化
      *
      * @param httpUrl 钱包url访问地址(ip + port)
      */
@@ -96,6 +95,24 @@ public class NerveSDKBootStrap {
         SDKContext.nuls_chain_id = 2;
         SDKContext.addressPrefixNuls = "tNULS";
         SDKContext.addressPrefix = "TNVT";
+    }
+
+    /**
+     * SDK工具连接主网钱包初始化
+     *
+     * @param httpUrl 钱包url访问地址(ip + port)
+     */
+    public static void initMain(String httpUrl) {
+        initChainId(9);
+        if (httpUrl != null && !httpUrl.endsWith("/")) {
+            httpUrl += "/";
+        }
+        if (StringUtils.isNotBlank(httpUrl)) {
+            SDKContext.wallet_url = httpUrl;
+        }
+        SDKContext.nuls_chain_id = 1;
+        SDKContext.addressPrefixNuls = "NULS";
+        SDKContext.addressPrefix = "NERVE";
     }
 
     /**

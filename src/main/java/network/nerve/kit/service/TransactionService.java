@@ -400,8 +400,8 @@ public class TransactionService {
             coinTos.add(coinTo);
         }
 
-        txSize = txSize + getSignatureSize(coinFroms);
-        TxUtils.calcTxFee(coinFroms, coinTos, txSize);
+        //txSize = txSize + getSignatureSize(coinFroms);
+        //TxUtils.calcTxFee(coinFroms, coinTos, txSize);
         CoinData coinData = new CoinData();
         coinData.setFrom(coinFroms);
         coinData.setTo(coinTos);
@@ -1305,8 +1305,8 @@ public class TransactionService {
             coinTos.add(coinTo);
         }
 
-        txSize = txSize + getMultiSignSignatureSize(transferDto.getPubKeys().size());
-        TxUtils.calcTxFee(coinFroms, coinTos, txSize);
+        //txSize = txSize + getMultiSignSignatureSize(transferDto.getPubKeys().size());
+        //TxUtils.calcTxFee(coinFroms, coinTos, txSize);
         CoinData coinData = new CoinData();
         coinData.setFrom(coinFroms);
         coinData.setTo(coinTos);
@@ -1507,8 +1507,8 @@ public class TransactionService {
         CoinTo coinTo = new CoinTo(address, from.getAssetChainId(), from.getAssetId(), amount, -1);
         coinTos.add(coinTo);
 
-        txSize = txSize + getSignatureSize(coinFroms);
-        TxUtils.calcTxFee(coinFroms, coinTos, txSize);
+        //txSize = txSize + getSignatureSize(coinFroms);
+        //TxUtils.calcTxFee(coinFroms, coinTos, txSize);
         CoinData coinData = new CoinData();
         coinData.setFrom(coinFroms);
         coinData.setTo(coinTos);
@@ -1582,8 +1582,8 @@ public class TransactionService {
         CoinTo coinTo = new CoinTo(address, from.getAssetChainId(), from.getAssetId(), from.getAmount().subtract(dto.getPrice()), 0);
         coinTos.add(coinTo);
 
-        txSize = txSize + getSignatureSize(coinFroms);
-        TxUtils.calcTxFee(coinFroms, coinTos, txSize);
+        //txSize = txSize + getSignatureSize(coinFroms);
+        //TxUtils.calcTxFee(coinFroms, coinTos, txSize);
         CoinData coinData = new CoinData();
         coinData.setFrom(coinFroms);
         coinData.setTo(coinTos);
@@ -1689,8 +1689,8 @@ public class TransactionService {
         CoinTo coinTo = new CoinTo(addressBytes, coinFrom.getAssetsChainId(), coinFrom.getAssetsId(), coinFrom.getAmount().subtract(fee), getCurrentTimeSeconds() + SDKContext.stop_agent_lock_time);
         coinToList.add(0, coinTo);
 
-        txSize = txSize + P2PHKSignature.SERIALIZE_LENGTH;
-        TxUtils.calcTxFee(coinFromList, coinToList, txSize);
+        //txSize = txSize + P2PHKSignature.SERIALIZE_LENGTH;
+        //TxUtils.calcTxFee(coinFromList, coinToList, txSize);
         CoinData coinData = new CoinData();
         coinData.setFrom(coinFromList);
         coinData.setTo(coinToList);
@@ -1835,8 +1835,8 @@ public class TransactionService {
         CoinTo coinTo = new CoinTo(address, from.getAssetChainId(), from.getAssetId(), amount, -1);
         coinTos.add(coinTo);
 
-        txSize = txSize + getMultiSignSignatureSize(pubKeyCount);
-        TxUtils.calcTxFee(coinFroms, coinTos, txSize);
+        //txSize = txSize + getMultiSignSignatureSize(pubKeyCount);
+        //TxUtils.calcTxFee(coinFroms, coinTos, txSize);
         CoinData coinData = new CoinData();
         coinData.setFrom(coinFroms);
         coinData.setTo(coinTos);
