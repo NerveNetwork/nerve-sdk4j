@@ -960,6 +960,107 @@ public class TransactionService {
         }
     }
 
+    public Result stableSwapAddLiquidity(String from, BigInteger amount,
+                                         NerveToken token, String pairAddress,
+                                         Long deadline, String to, String remark) {
+        try {
+            long currentTimeSeconds = getCurrentTimeSeconds();
+            if (deadline == null || deadline.longValue() <= 0) {
+                deadline = currentTimeSeconds + 300;
+            }
+            byte[] fromBytes = AddressTool.getAddress(from);
+            byte[] pairAddressBytes = AddressTool.getAddress(pairAddress);
+            // 组装交易
+            StableAddLiquidityData data = new StableAddLiquidityData();
+            data.setTo(AddressTool.getAddress(to));
+
+            Transaction tx = new Transaction(TxType.SWAP_ADD_LIQUIDITY_STABLE_COIN);
+            tx.setTxData(TxUtils.nulsData2HexBytes(data));
+            tx.setTime(currentTimeSeconds);
+            tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
+
+            CoinData coinData = new CoinData();
+            List<CoinFrom> froms = coinData.getFrom();
+            List<CoinTo> tos = coinData.getTo();
+
+            String nonce = this.checkNonce(from, token, null);
+
+            froms.add(new CoinFrom(
+                    fromBytes,
+                    token.getChainId(),
+                    token.getAssetId(),
+                    amount,
+                    HexUtil.decode(nonce),
+                    (byte) 0));
+            tos.add(new CoinTo(
+                    pairAddressBytes,
+                    token.getChainId(),
+                    token.getAssetId(),
+                    amount));
+            tx.setCoinData(TxUtils.nulsData2HexBytes(coinData));
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("hash", tx.getHash().toHex());
+            map.put("txHex", HexUtil.encode(TxUtils.nulsData2HexBytes(tx)));
+            return Result.getSuccess(map);
+        } catch (NulsException e) {
+            return Result.getFailed(e.getErrorCode()).setMsg(e.format());
+        }
+    }
+
+    public Result stableSwapRemoveLiquidity(String from, BigInteger amountLP, NerveToken tokenLP,
+                                            Integer[] receiveOrderIndexs, String pairAddress, Long deadline, String to, String remark) {
+        try {
+            long currentTimeSeconds = getCurrentTimeSeconds();
+            if (deadline == null || deadline.longValue() <= 0) {
+                deadline = currentTimeSeconds + 300;
+            }
+            byte[] fromBytes = AddressTool.getAddress(from);
+            byte[] pairAddressBytes = AddressTool.getAddress(pairAddress);
+            // 组装交易
+            int length = receiveOrderIndexs.length;
+            byte[] indexs = new byte[length];
+            for (int i = 0; i < length; i++) {
+                indexs[i] = receiveOrderIndexs[i].byteValue();
+            }
+            StableRemoveLiquidityData data = new StableRemoveLiquidityData();
+            data.setIndexs(indexs);
+            data.setTo(AddressTool.getAddress(to));
+
+            Transaction tx = new Transaction(TxType.SWAP_REMOVE_LIQUIDITY_STABLE_COIN);
+            tx.setTxData(TxUtils.nulsData2HexBytes(data));
+            tx.setTime(currentTimeSeconds);
+            tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
+
+            CoinData coinData = new CoinData();
+            List<CoinFrom> froms = coinData.getFrom();
+            List<CoinTo> tos = coinData.getTo();
+
+            String nonce = this.checkNonce(from, tokenLP, null);
+
+            froms.add(new CoinFrom(
+                    fromBytes,
+                    tokenLP.getChainId(),
+                    tokenLP.getAssetId(),
+                    amountLP,
+                    HexUtil.decode(nonce),
+                    (byte) 0));
+            tos.add(new CoinTo(
+                    pairAddressBytes,
+                    tokenLP.getChainId(),
+                    tokenLP.getAssetId(),
+                    amountLP));
+            tx.setCoinData(TxUtils.nulsData2HexBytes(coinData));
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("hash", tx.getHash().toHex());
+            map.put("txHex", HexUtil.encode(TxUtils.nulsData2HexBytes(tx)));
+            return Result.getSuccess(map);
+        } catch (NulsException e) {
+            return Result.getFailed(e.getErrorCode()).setMsg(e.format());
+        }
+    }
+
     private String[] checkNonces(String address, NerveTokenAmount[] tokens, String[] nonces) throws NulsException {
         if (nonces != null) {
             return nonces;
@@ -976,6 +1077,19 @@ public class TransactionService {
             nonces[i] = balance.get("nonce").toString();
         }
         return nonces;
+    }
+
+    private String checkNonce(String address, NerveToken token, String nonce) throws NulsException {
+        if (nonce != null) {
+            return nonce;
+        }
+        Result accountBalance = NerveSDKTool.getAccountBalance(address, token.getChainId(), token.getAssetId());
+        if (!accountBalance.isSuccess()) {
+            throw new NulsException(AccountErrorCode.NOT_FOUND_NONCE);
+        }
+        Map balance = (Map) accountBalance.getData();
+        nonce = balance.get("nonce").toString();
+        return nonce;
     }
 
     /**

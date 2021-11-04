@@ -1001,4 +1001,45 @@ public class NerveSDKTool {
         return transactionService.stableSwapTradeTx(from, to, tokenAmountIns, null, tokenOutIndex, pairAddress, feeTo, remark);
     }
 
+    /**
+     * Stable-Swap 添加StableSwap流动性
+     */
+    @ApiOperation(description = "Stable-Swap 添加StableSwap流动性", order = 373, detailDesc = "Stable-Swap 添加StableSwap流动性")
+    @Parameters(value = {
+            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
+            @Parameter(parameterName = "amount", parameterType = "BigInteger", parameterDes = "添加的资产数量"),
+            @Parameter(parameterName = "token", parameterType = "NerveToken", parameterDes = "添加的资产类型，示例：1-2"),
+            @Parameter(parameterName = "pairAddress", parameterType = "String", parameterDes = "交易对地址"),
+            @Parameter(parameterName = "deadline", parameterType = "Long", parameterDes = "过期时间"),
+            @Parameter(parameterName = "to", parameterType = "String", parameterDes = "流动性份额接收地址"),
+            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result stableSwapAddLiquidity(String from, BigInteger amount,
+                                           NerveToken token, String pairAddress,
+                                            Long deadline, String to, String remark) {
+        return transactionService.stableSwapAddLiquidity(from, amount, token, pairAddress, deadline, to, remark);
+    }
+
+    /**
+     * Stable-Swap 移除StableSwap流动性
+     */
+    @ApiOperation(description = "Stable-Swap 移除StableSwap流动性", order = 374, detailDesc = "Stable-Swap 移除StableSwap流动性")
+    @Parameters(value = {
+            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
+            @Parameter(parameterName = "amountLP", parameterType = "BigInteger", parameterDes = "移除的资产LP的数量"),
+            @Parameter(parameterName = "tokenLP", parameterType = "NerveToken", parameterDes = "资产LP的类型，示例：1-1"),
+            @Parameter(parameterName = "receiveOrderIndexs", parameterType = "int[]", parameterDes = "按币种索引顺序接收资产"),
+            @Parameter(parameterName = "pairAddress", parameterType = "String", parameterDes = "交易对地址"),
+            @Parameter(parameterName = "deadline", parameterType = "Long", parameterDes = "过期时间"),
+            @Parameter(parameterName = "to", parameterType = "String", parameterDes = "移除流动性份额接收地址"),
+            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
+    })
+    public static Result stableSwapRemoveLiquidity(String from, BigInteger amountLP, NerveToken tokenLP,
+                                            Integer[] receiveOrderIndexs, String pairAddress, Long deadline, String to, String remark) {
+        return transactionService.stableSwapRemoveLiquidity(from, amountLP, tokenLP, receiveOrderIndexs, pairAddress, deadline, to, remark);
+    }
 }
