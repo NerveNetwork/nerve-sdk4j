@@ -30,8 +30,37 @@ public class TransationServiceTest {
 
     @Before
     public void before() {
-        NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
+        //NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
         //NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://127.0.0.1:17004/");
+    }
+
+    @Test
+    public void withdrawTest() throws Exception {
+        String from = "NERVEepb6AMdiWY25K6UtKL5vb5br3ncYTdVvW";
+        WithdrawalTxDto dto = new WithdrawalTxDto();
+        dto.setFromAddress(from);
+        dto.setAssetChainId(9);
+        dto.setAssetId(223);
+        dto.setHeterogeneousChainId(108);
+        dto.setHeterogeneousAddress("TMZBDFxu5WE8VwYSj2p3vVuBxxKMSqZDc8");
+        dto.setAmount(BigInteger.valueOf(10000L));
+        dto.setDistributionFee(BigInteger.valueOf(10000000000L));
+        Result result0 = NerveSDKTool.createWithdrawalTx(dto);
+        Map map = (Map) result0.getData();
+        String txHex = map.get("txHex").toString();
+        System.out.println(txHex);
+
+        // 私钥签名交易
+        String prikey = "???";
+        Result<Map> result = NerveSDKTool.sign(txHex, from, prikey);
+        txHex = (String) result.getData().get("txHex");
+        String txHash = (String) result.getData().get("hash");
+        System.out.println(String.format("交易序列化Hex字符串: %s", txHex));
+        System.out.println(String.format("交易hash: %s", txHash));
+
+        // 广播交易
+        result = NerveSDKTool.broadcast(txHex);
+        System.out.println(JSONUtils.obj2PrettyJson(result));
     }
 
     @Test
