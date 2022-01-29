@@ -20,6 +20,7 @@ package network.nerve.core.crypto;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedBytes;
 import network.nerve.core.basic.VarInt;
 import network.nerve.core.model.ObjectUtils;
@@ -102,7 +103,7 @@ public class ECKey {
     };
 
     /**
-     * Compares pub key bytes using {@link com.google.common.primitives.UnsignedBytes#lexicographicalComparator()}
+     * Compares pub key bytes using {@link UnsignedBytes#lexicographicalComparator()}
      */
     public static final Comparator<ECKey> PUBKEY_COMPARATOR = new Comparator<ECKey>() {
         private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
@@ -131,9 +132,9 @@ public class ECKey {
 
     static {
         // Init proper random number generator, as some old Android installations have bugs that make it unsecure.
-//        if (HexUtil.isAndroidRuntime()) {
-//            new LinuxSecureRandom();
-//        }
+        //if (HexUtil.isAndroidRuntime()) {
+        //    new LinuxSecureRandom();
+        //}
 
         // Tell Bouncy Castle to precompute data that's needed during secp256k1 calculations.
         FixedPointUtil.precompute(CURVE_PARAMS.getG());
@@ -198,38 +199,9 @@ public class ECKey {
     }
 
     /**
-     * Utility for compressing an elliptic curve point. Returns the same point if it's already compressed.
-     * See the ECKey class docs for a discussion of point compression.
-     */
-    public static ECPoint compressPoint(ECPoint point) {
-        return getPointWithCompression(point, true);
-    }
-
-    public static LazyECPoint compressPoint(LazyECPoint point) {
-        return point.isCompressed() ? point : new LazyECPoint(compressPoint(point.get()));
-    }
-
-    /**
      * Utility for decompressing an elliptic curve point. Returns the same point if it's already compressed.
      * See the ECKey class docs for a discussion of point compression.
      */
-    public static ECPoint decompressPoint(ECPoint point) {
-        return getPointWithCompression(point, false);
-    }
-
-    public static LazyECPoint decompressPoint(LazyECPoint point) {
-        return !point.isCompressed() ? point : new LazyECPoint(decompressPoint(point.get()));
-    }
-
-    private static ECPoint getPointWithCompression(ECPoint point, boolean compressed) {
-        if (point.isCompressed() == compressed) {
-            return point;
-        }
-        point = point.normalize();
-        BigInteger x = point.getAffineXCoord().toBigInteger();
-        BigInteger y = point.getAffineYCoord().toBigInteger();
-        return CURVE.getCurve().createPoint(x, y, compressed);
-    }
 
     /**
      * Construct an ECKey from an ASN.1 encoded private key. These are produced by OpenSSL and stored by Bitcoin
@@ -244,16 +216,8 @@ public class ECKey {
      * public key is compressed.
      */
     public static ECKey fromPrivate(BigInteger privKey) {
-        return fromPrivate(privKey, true);
-    }
-
-    /**
-     * Creates an ECKey given the private key only. The public key is calculated from it (this is slow), either
-     * compressed or not.
-     */
-    public static ECKey fromPrivate(BigInteger privKey, boolean compressed) {
         ECPoint point = publicPointFromPrivate(privKey);
-        return new ECKey(privKey, getPointWithCompression(point, compressed));
+        return new ECKey(privKey, point);
     }
 
     /**
@@ -262,14 +226,6 @@ public class ECKey {
      */
     public static ECKey fromPrivate(byte[] privKeyBytes) {
         return fromPrivate(new BigInteger(1, privKeyBytes));
-    }
-
-    /**
-     * Creates an ECKey given the private key only. The public key is calculated from it (this is slow), either
-     * compressed or not.
-     */
-    public static ECKey fromPrivate(byte[] privKeyBytes, boolean compressed) {
-        return fromPrivate(new BigInteger(1, privKeyBytes), compressed);
     }
 
     /**
@@ -323,67 +279,6 @@ public class ECKey {
     }
 
     /**
-     * Returns a copy of this key, but with the public point represented in uncompressed form. Normally you would
-     * never need this: it's for specialised scenarios or when backwards compatibility in encoded form is necessary.
-     */
-    public ECKey decompress() {
-        if (!pub.isCompressed()) {
-            return this;
-        } else {
-            return new ECKey(priv, decompressPoint(pub.get()));
-        }
-    }
-
-    /**
-     * Creates an ECKey given only the private key bytes. This is the same as using the BigInteger constructor, but
-     * is more convenient if you are importing a key from elsewhere. The public key will be automatically derived
-     * from the private key.
-     */
-    @Deprecated
-    public ECKey(@Nullable byte[] privKeyBytes, @Nullable byte[] pubKey) {
-        this(privKeyBytes == null ? null : new BigInteger(1, privKeyBytes), pubKey);
-    }
-
-
-    /**
-     * Creates an ECKey given either the private key only, the public key only, or both. If only the private key
-     * is supplied, the public key will be calculated from it (this is slow). If both are supplied, it's assumed
-     * the public key already correctly matches the private key. If only the public key is supplied, this ECKey cannot
-     * be used for signing.
-     *
-     * @param compressed If set to true and pubKey is null, the derived public key will be in compressed form.
-     */
-    @Deprecated
-    public ECKey(@Nullable BigInteger privKey, @Nullable byte[] pubKey, boolean compressed) {
-        if (privKey == null && pubKey == null) {
-            throw new IllegalArgumentException("ECKey requires at least private or public key");
-        }
-        this.priv = privKey;
-        if (pubKey == null) {
-            // Derive public from private.
-            ECPoint point = publicPointFromPrivate(privKey);
-            point = getPointWithCompression(point, compressed);
-            this.pub = new LazyECPoint(point);
-        } else {
-            // We expect the pubkey to be in regular encoded form, just as a BigInteger. Therefore the first byte is
-            // a special marker byte.
-            //  This is probably not a useful API and may be confusing.
-            this.pub = new LazyECPoint(CURVE.getCurve(), pubKey);
-        }
-    }
-
-    /**
-     * Creates an ECKey given either the private key only, the public key only, or both. If only the private key
-     * is supplied, the public key will be calculated from it (this is slow). If both are supplied, it's assumed
-     * the public key already correctly matches the public key. If only the public key is supplied, this ECKey cannot
-     * be used for signing.
-     */
-    @Deprecated
-    private ECKey(@Nullable BigInteger privKey, @Nullable byte[] pubKey) {
-        this(privKey, pubKey, false);
-    }
-
-    /**
      * Returns true if this key doesn't have unencrypted access to private key bytes. This may be because it was never
      * given any private key bytes to begin with (a watching key), or because the key is encrypted. You can use
      */
@@ -414,7 +309,7 @@ public class ECKey {
      */
     public static ECPoint publicPointFromPrivate(BigInteger privKey) {
         /*
-         *  FixedPointCombMultiplier currently doesn't support scalars longer than the group order,
+         * TODO: FixedPointCombMultiplier currently doesn't support scalars longer than the group order,
          * but that could change in future versions.
          */
         if (privKey.bitLength() > CURVE.getN().bitLength()) {
@@ -452,7 +347,7 @@ public class ECKey {
      * Gets the private key in the form of an integer field element. The public key is derived by performing EC
      * point addition this number of times (i.e. point multiplying).
      *
-     * @throws IllegalStateException if the private key bytes are not available.
+     * @throws java.lang.IllegalStateException if the private key bytes are not available.
      */
     public BigInteger getPrivKey() {
         if (priv == null) {
@@ -681,7 +576,7 @@ public class ECKey {
      * @throws Exception if the signature is unparseable in some way.
      */
     public static boolean verify(byte[] data, byte[] signature, byte[] pub) {
-        return verify(data, ECDSASignature.decodeFromDER(signature), pub);
+        return verify(data, ECKey.ECDSASignature.decodeFromDER(signature), pub);
     }
 
     /**
@@ -706,7 +601,7 @@ public class ECKey {
      * if the signature doesn't match
      *
      * @throws Exception                        if the signature is unparseable in some way.
-     * @throws SignatureException if the signature does not match.
+     * @throws java.security.SignatureException if the signature does not match.
      */
     public void verifyOrThrow(byte[] hash, byte[] signature) throws Exception, SignatureException {
         if (!verify(hash, signature)) {
@@ -718,7 +613,7 @@ public class ECKey {
      * Verifies the given R/S pair (signature) against a hash using the public key, and throws an exception
      * if the signature doesn't match
      *
-     * @throws SignatureException if the signature does not match.
+     * @throws java.security.SignatureException if the signature does not match.
      */
     public void verifyOrThrow(Sha256Hash sigHash, ECDSASignature signature) throws SignatureException {
         if (!ECKey.verify(sigHash.getBytes(), signature, getPubKey())) {
@@ -784,8 +679,7 @@ public class ECKey {
             checkArgument(encoding >= 2 && encoding <= 4, "Input has 'publicKey' with invalid encoding");
 
             // Now sanity check to ensure the pubkey bytes match the privkey.
-            boolean compressed = (pubbits.length == 33);
-            ECKey key = new ECKey(privkey, null, compressed);
+            ECKey key = ECKey.fromPrivate(privkey);
             if (!Arrays.equals(key.getPubKey(), pubbits)) {
                 throw new IllegalArgumentException("Public key in ASN.1 structure does not match private key.");
             }
@@ -846,10 +740,10 @@ public class ECKey {
      */
     @Nullable
     public static ECKey recoverFromSignature(int recId, ECDSASignature sig, Sha256Hash message, boolean compressed) {
-        checkArgument(recId >= 0, "recId must be positive");
-        checkArgument(sig.r.signum() >= 0, "r must be positive");
-        checkArgument(sig.s.signum() >= 0, "s must be positive");
-        checkNotNull(message);
+        Preconditions.checkArgument(recId >= 0, "recId must be positive");
+        Preconditions.checkArgument(sig.r.signum() >= 0, "r must be positive");
+        Preconditions.checkArgument(sig.s.signum() >= 0, "s must be positive");
+        Preconditions.checkNotNull(message);
         // 1.0 For j from 0 to h   (h == recId here and the loop is outside this function)
         //   1.1 Let x = r + jn
         BigInteger n = CURVE.getN();  // Curve order.
@@ -1016,3 +910,4 @@ public class ECKey {
         return ECKey.verify(hash, signature, getPubKey());
     }
 }
+
