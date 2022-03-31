@@ -51,101 +51,89 @@ import java.util.Set;
 public class Agent extends BaseNulsData {
 
     /**
-    * 节点地址
-    * agent address
-    **/
+     * 节点地址
+     * agent address
+     **/
     @ApiModelProperty(description = "节点地址")
     private byte[] agentAddress;
 
     /**
-    * 打包地址
-    * packing address
-    **/
+     * 打包地址
+     * packing address
+     **/
     @ApiModelProperty(description = "出块地址")
     private byte[] packingAddress;
 
     /**
-    * 奖励地址
-    * reward address
-    * */
+     * 奖励地址
+     * reward address
+     */
     @ApiModelProperty(description = "奖励地址")
     private byte[] rewardAddress;
 
     /**
-    * 保证金
-    * deposit
-    * */
+     * 保证金
+     * deposit
+     */
     @ApiModelProperty(description = "保证金")
     private BigInteger deposit;
 
     /**
-    * 佣金比例
-    * commission rate
-    * */
-    @ApiModelProperty(description = "佣金比例")
-    private byte commissionRate;
-
-    /**
-    * 创建时间
-    * create time
-    **/
+     * 创建时间
+     * create time
+     **/
     @ApiModelProperty(description = "创建时间")
     private transient long time;
 
     /**
-    * 所在区块高度
-    * block height
-    * */
+     * 所在区块高度
+     * block height
+     */
     @ApiModelProperty(description = "所在区块高度")
     private transient long blockHeight = -1L;
 
     /**
-    * 该节点注销所在区块高度
-    * Block height where the node logs out
-    * */
+     * 该节点注销所在区块高度
+     * Block height where the node logs out
+     */
     @ApiModelProperty(description = "节点注销高度")
     private transient long delHeight = -1L;
 
     /**
-    *0:待共识 unConsensus, 1:共识中 consensus
-    * */
+     * 0:待共识 unConsensus, 1:共识中 consensus
+     */
     @ApiModelProperty(description = "状态，0:待共识 unConsensus, 1:共识中 consensus")
     private transient int status;
 
     /**
-    * 信誉值
-    * credit value
-    * */
+     * 信誉值
+     * credit value
+     */
     @ApiModelProperty(description = "信誉值")
     private transient double creditVal;
 
     /**
-     *  总委托金额
-     *Total amount entrusted
-     * */
-    @ApiModelProperty(description = "节点总委托金额")
-    private transient BigInteger totalDeposit = BigInteger.ZERO;
-
-    /**
      * 交易HASH
      * transaction hash
-     * */
+     */
     @ApiModelProperty(description = "创建该节点的交易HASH")
     private transient NulsHash txHash;
 
     /**
-    * 参与共识人数
-    * Participation in consensus
-    * */
-    @ApiModelProperty(description = "参与共识人数")
-    private transient int memberCount;
+     * 别名不序列化
+     * Aliases not serialized
+     */
+    @ApiModelProperty(description = "节点别名")
+    private transient String alias;
 
     /**
-    *别名不序列化
-    * Aliases not serialized
-    * */
+     * 出块地址公钥
+     * Aliases not serialized
+     */
     @ApiModelProperty(description = "节点别名")
-    private transient String alais;
+    private transient byte[] pubKey;
+
+    private transient String packingAddressStr;
     @Override
     public int size() {
         int size = 0;
@@ -153,7 +141,6 @@ public class Agent extends BaseNulsData {
         size += this.agentAddress.length;
         size += this.rewardAddress.length;
         size += this.packingAddress.length;
-        size += 1;
         return size;
     }
 
@@ -163,7 +150,6 @@ public class Agent extends BaseNulsData {
         stream.write(agentAddress);
         stream.write(packingAddress);
         stream.write(rewardAddress);
-        stream.write(this.commissionRate);
     }
 
     @Override
@@ -172,77 +158,8 @@ public class Agent extends BaseNulsData {
         this.agentAddress = byteBuffer.readBytes(Address.ADDRESS_LENGTH);
         this.packingAddress = byteBuffer.readBytes(Address.ADDRESS_LENGTH);
         this.rewardAddress = byteBuffer.readBytes(Address.ADDRESS_LENGTH);
-        this.commissionRate = byteBuffer.readByte();
     }
 
-
-    public byte[] getPackingAddress() {
-        return packingAddress;
-    }
-
-    public void setPackingAddress(byte[] packingAddress) {
-        this.packingAddress = packingAddress;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    public byte getCommissionRate() {
-        return commissionRate;
-    }
-
-    public void setCommissionRate(byte commissionRate) {
-        this.commissionRate = commissionRate;
-    }
-
-    public long getBlockHeight() {
-        return blockHeight;
-    }
-
-    public void setBlockHeight(long blockHeight) {
-        this.blockHeight = blockHeight;
-    }
-
-    public void setCreditVal(double creditVal) {
-        this.creditVal = creditVal;
-    }
-
-    public double getCreditVal() {
-        return creditVal < 0d ? 0D : this.creditVal;
-    }
-
-    public double getRealCreditVal(){
-        return this.creditVal;
-    }
-
-    public void setTxHash(NulsHash txHash) {
-        this.txHash = txHash;
-    }
-
-    public NulsHash getTxHash() {
-        return txHash;
-    }
-
-    public long getTime() {
-        return time;
-    }
-
-    public void setTime(long time) {
-        this.time = time;
-    }
-
-    public long getDelHeight() {
-        return delHeight;
-    }
-
-    public void setDelHeight(long delHeight) {
-        this.delHeight = delHeight;
-    }
 
     public byte[] getAgentAddress() {
         return agentAddress;
@@ -250,6 +167,14 @@ public class Agent extends BaseNulsData {
 
     public void setAgentAddress(byte[] agentAddress) {
         this.agentAddress = agentAddress;
+    }
+
+    public byte[] getPackingAddress() {
+        return packingAddress;
+    }
+
+    public void setPackingAddress(byte[] packingAddress) {
+        this.packingAddress = packingAddress;
     }
 
     public byte[] getRewardAddress() {
@@ -260,14 +185,6 @@ public class Agent extends BaseNulsData {
         this.rewardAddress = rewardAddress;
     }
 
-    public int getMemberCount() {
-        return memberCount;
-    }
-
-    public void setMemberCount(int memberCount) {
-        this.memberCount = memberCount;
-    }
-
     public BigInteger getDeposit() {
         return deposit;
     }
@@ -276,12 +193,76 @@ public class Agent extends BaseNulsData {
         this.deposit = deposit;
     }
 
-    public BigInteger getTotalDeposit() {
-        return totalDeposit;
+    public long getTime() {
+        return time;
     }
 
-    public void setTotalDeposit(BigInteger totalDeposit) {
-        this.totalDeposit = totalDeposit;
+    public void setTime(long time) {
+        this.time = time;
+    }
+
+    public long getBlockHeight() {
+        return blockHeight;
+    }
+
+    public void setBlockHeight(long blockHeight) {
+        this.blockHeight = blockHeight;
+    }
+
+    public long getDelHeight() {
+        return delHeight;
+    }
+
+    public void setDelHeight(long delHeight) {
+        this.delHeight = delHeight;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public double getCreditVal() {
+        return creditVal;
+    }
+
+    public void setCreditVal(double creditVal) {
+        this.creditVal = creditVal;
+    }
+
+    public NulsHash getTxHash() {
+        return txHash;
+    }
+
+    public void setTxHash(NulsHash txHash) {
+        this.txHash = txHash;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public byte[] getPubKey() {
+        return pubKey;
+    }
+
+    public void setPubKey(byte[] pubKey) {
+        this.pubKey = pubKey;
+    }
+
+    public String getPackingAddressStr() {
+        return packingAddressStr;
+    }
+
+    public void setPackingAddressStr(String packingAddressStr) {
+        this.packingAddressStr = packingAddressStr;
     }
 
     @Override
@@ -295,11 +276,4 @@ public class Agent extends BaseNulsData {
         return addressSet;
     }
 
-    public String getAlais() {
-        return alais;
-    }
-
-    public void setAlais(String alais) {
-        this.alais = alais;
-    }
 }

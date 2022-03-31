@@ -31,6 +31,7 @@ import network.nerve.base.basic.NulsOutputStreamBuffer;
 import network.nerve.base.data.BaseNulsData;
 import network.nerve.base.data.NulsHash;
 import network.nerve.core.exception.NulsException;
+import network.nerve.core.parse.SerializeUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -53,18 +54,21 @@ public class StopAgent extends BaseNulsData {
      */
     @Override
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
+        stream.writeBytesWithLength(address);
         stream.write(this.createTxHash.getBytes());
-
     }
 
     @Override
     public void parse(NulsByteBuffer byteBuffer) throws NulsException {
+        this.address = byteBuffer.readByLengthByte();
         this.createTxHash = byteBuffer.readHash();
     }
 
     @Override
     public int size() {
-        return this.createTxHash.getBytes().length;
+        int size = createTxHash.getBytes().length;
+        size += SerializeUtils.sizeOfBytes(address);
+        return size;
     }
 
     public Set<byte[]> getAddresses() {

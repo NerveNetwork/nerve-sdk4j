@@ -6,7 +6,7 @@
 
   <groupId>network.nerve</groupId>
   <artifactId>nerve-sdk4j</artifactId>
-  <version>1.2.4</version>
+  <version>1.2.5</version>
 
   <name>nerve-sdk4j</name>
 
@@ -23,7 +23,7 @@
     </license>
   </licenses>
   <scm>
-    <tag>1.2.4</tag>
+    <tag>1.2.5</tag>
     <url>https://github.com/NerveNetwork/nerve-sdk4j</url>
     <connection>https://github.com/NerveNetwork/nerve-sdk4j.git</connection>
     <developerConnection>https://nerve.network</developerConnection>

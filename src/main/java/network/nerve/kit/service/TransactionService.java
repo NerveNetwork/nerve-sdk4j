@@ -1550,7 +1550,6 @@ public class TransactionService {
             agent.setPackingAddress(AddressTool.getAddress(consensusDto.getPackingAddress()));
             agent.setRewardAddress(AddressTool.getAddress(consensusDto.getRewardAddress()));
             agent.setDeposit((consensusDto.getDeposit()));
-            agent.setCommissionRate((byte) consensusDto.getCommissionRate());
             tx.setTxData(agent.serialize());
 
             CoinData coinData = assemblyCoinData(consensusDto.getInput(), agent.getDeposit(), tx.size());
@@ -1590,7 +1589,6 @@ public class TransactionService {
             tx.setTime(getCurrentTimeSeconds());
             Deposit deposit = new Deposit();
             deposit.setAddress(AddressTool.getAddress(dto.getAddress()));
-            deposit.setAgentHash(NulsHash.fromHex(dto.getAgentHash()));
             deposit.setDeposit(dto.getDeposit());
             tx.setTxData(deposit.serialize());
 
@@ -1911,7 +1909,6 @@ public class TransactionService {
             agent.setPackingAddress(AddressTool.getAddress(consensusDto.getPackingAddress()));
             agent.setRewardAddress(AddressTool.getAddress(consensusDto.getRewardAddress()));
             agent.setDeposit((consensusDto.getDeposit()));
-            agent.setCommissionRate((byte) consensusDto.getCommissionRate());
             tx.setTxData(agent.serialize());
 
             CoinData coinData = assemblyCoinData(consensusDto.getInput(), agent.getDeposit(), consensusDto.getPubKeys().size(), tx.size());
@@ -1972,7 +1969,6 @@ public class TransactionService {
             tx.setTime(getCurrentTimeSeconds());
             Deposit deposit = new Deposit();
             deposit.setAddress(AddressTool.getAddress(dto.getAddress()));
-            deposit.setAgentHash(NulsHash.fromHex(dto.getAgentHash()));
             deposit.setDeposit(dto.getDeposit());
             tx.setTxData(deposit.serialize());
 

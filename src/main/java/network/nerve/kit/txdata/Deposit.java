@@ -52,20 +52,27 @@ import java.util.Set;
 public class Deposit extends BaseNulsData {
     @ApiModelProperty(description = "委托金额")
     private BigInteger deposit;
-    @ApiModelProperty(description = "委托的节点HASH")
-    private NulsHash agentHash;
     @ApiModelProperty(description = "委托账户")
     private byte[] address;
+    @ApiModelProperty(description = "资产链ID")
+    private int assetChainId;
+    @ApiModelProperty(description = "资产ID")
+    private int assetId;
+    @ApiModelProperty(description = "委托类型")
+    private byte depositType;
+    @ApiModelProperty(description = "委托时长")
+    private byte timeType;
     @ApiModelProperty(description = "委托时间")
     private transient long time;
-    @ApiModelProperty(description = "状态")
-    private transient int status;
     @ApiModelProperty(description = "委托交易HASH")
     private transient NulsHash txHash;
     @ApiModelProperty(description = "委托交易被打包的高度")
     private transient long blockHeight = -1L;
     @ApiModelProperty(description = "退出委托高度")
     private transient long delHeight = -1L;
+
+
+    public Deposit(){}
 
     /**
      * serialize important field
@@ -74,15 +81,20 @@ public class Deposit extends BaseNulsData {
     protected void serializeToStream(NulsOutputStreamBuffer stream) throws IOException {
         stream.writeBigInteger(deposit);
         stream.write(address);
-        stream.write(agentHash.getBytes());
-
+        stream.writeUint16(assetChainId);
+        stream.writeUint16(assetId);
+        stream.writeByte(depositType);
+        stream.writeByte(timeType);
     }
 
     @Override
     public void parse(NulsByteBuffer byteBuffer) throws NulsException {
         this.deposit = byteBuffer.readBigInteger();
         this.address = byteBuffer.readBytes(Address.ADDRESS_LENGTH);
-        this.agentHash = byteBuffer.readHash();
+        this.assetChainId = byteBuffer.readUint16();
+        this.assetId = byteBuffer.readUint16();
+        this.depositType = byteBuffer.readByte();
+        this.timeType = byteBuffer.readByte();
     }
 
     @Override
@@ -90,7 +102,8 @@ public class Deposit extends BaseNulsData {
         int size = 0;
         size += SerializeUtils.sizeOfBigInteger();
         size += Address.ADDRESS_LENGTH;
-        size += NulsHash.HASH_LENGTH;
+        size += SerializeUtils.sizeOfUint16() * 2;
+        size += 2;
         return size;
     }
 
@@ -102,28 +115,12 @@ public class Deposit extends BaseNulsData {
         this.deposit = deposit;
     }
 
-    public NulsHash getAgentHash() {
-        return agentHash;
-    }
-
-    public void setAgentHash(NulsHash agentHash) {
-        this.agentHash = agentHash;
-    }
-
     public long getTime() {
         return time;
     }
 
     public void setTime(long time) {
         this.time = time;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
     }
 
     public NulsHash getTxHash() {
@@ -158,10 +155,36 @@ public class Deposit extends BaseNulsData {
         this.address = address;
     }
 
-    public Set<byte[]> getAddresses() {
-        Set<byte[]> addressSet = new HashSet<>();
-        addressSet.add(this.address);
-        return addressSet;
+    public int getAssetChainId() {
+        return assetChainId;
+    }
+
+    public void setAssetChainId(int assetChainId) {
+        this.assetChainId = assetChainId;
+    }
+
+    public int getAssetId() {
+        return assetId;
+    }
+
+    public void setAssetId(int assetId) {
+        this.assetId = assetId;
+    }
+
+    public byte getDepositType() {
+        return depositType;
+    }
+
+    public void setDepositType(byte depositType) {
+        this.depositType = depositType;
+    }
+
+    public byte getTimeType() {
+        return timeType;
+    }
+
+    public void setTimeType(byte timeType) {
+        this.timeType = timeType;
     }
 
     @Override
