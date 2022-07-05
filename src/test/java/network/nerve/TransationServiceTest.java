@@ -30,7 +30,7 @@ public class TransationServiceTest {
 
     @Before
     public void before() {
-        //NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
+        NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
         //NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://127.0.0.1:17004/");
     }
 
@@ -105,7 +105,7 @@ public class TransationServiceTest {
         String from = "TNVTdTSPRMtpGNYRx98WkoqKnExU9pWDQjNPf";// 账户地址
         String to = "TNVTdTSPRMtpGNYRx98WkoqKnExU9pWDQjNPf";// 资产接收地址
         String pairAddress = "TNVTdTSQnXngR4HNnsH2w9kBUwZ8ciKaov2Ui";// pair地址
-        String feeTo = null;// (暂无)交易手续费取出一部分给指定的接收地址
+        String feeTo = null;// 交易手续费接收地址
         // 卖出的资产，5-7是usdt_eth，则此处代表用户卖出usdt_eth，支持同时卖出多个资产
         // 这里卖出0.2个, usdt_eth的decimals是6, 这里填入的卖出金额要乘以10的6次方
         NerveTokenAmount[] tokenAmountIns = new NerveTokenAmount[]{
@@ -113,7 +113,12 @@ public class TransationServiceTest {
                 };
         int tokenOutIndex = 2;// 买进的资产索引(示例: 交易对是[usdt_eth, usdt_bsc, usdt_heco]，用户想买进heco的usdt，则此处填2)
         String remark = "swap test";// 交易备注
-        Map map = (Map) NerveSDKTool.stableSwapTradeTx(from, to, tokenAmountIns, tokenOutIndex, pairAddress, feeTo, remark).getData();
+        Result result1 = NerveSDKTool.stableSwapTradeTx(from, to, tokenAmountIns, tokenOutIndex, pairAddress, feeTo, remark);
+        Map map = (Map) result1.getData();
+        if (map == null) {
+            System.err.println(JSONUtils.obj2PrettyJson(result1));
+            return;
+        }
 
         String txHex = map.get("txHex").toString();
         // 私钥签名交易
@@ -125,8 +130,48 @@ public class TransationServiceTest {
         System.out.println(String.format("交易hash: %s", txHash));
 
         // 广播交易
-        result = NerveSDKTool.broadcast(txHex);
-        System.out.println(JSONUtils.obj2PrettyJson(result));
+        //result = NerveSDKTool.broadcast(txHex);
+        //System.out.println(JSONUtils.obj2PrettyJson(result));
+    }
+
+    /**
+     * 包含手续费的交易
+     */
+    @Test
+    public void testStableSwapTradeWithFeeTx() throws Exception {
+        // 组装交易
+        String from = "TNVTdTSPRMtpGNYRx98WkoqKnExU9pWDQjNPf";// 账户地址
+        String to = "TNVTdTSPRMtpGNYRx98WkoqKnExU9pWDQjNPf";// 资产接收地址
+        String pairAddress = "TNVTdTSQnXngR4HNnsH2w9kBUwZ8ciKaov2Ui";// pair地址
+        // 卖出的资产，5-7是usdt_eth，则此处代表用户卖出usdt_eth，支持同时卖出多个资产
+        // 这里卖出0.2个, usdt_eth的decimals是6, 这里填入的卖出金额要乘以10的6次方
+        NerveTokenAmount[] tokenAmountIns = new NerveTokenAmount[]{
+                    new NerveTokenAmount(5, 7, new BigInteger("200000"))
+                };
+        int tokenOutIndex = 2;// 买进的资产索引(示例: 交易对是[usdt_eth, usdt_bsc, usdt_heco]，用户想买进heco的usdt，则此处填2)
+        String remark = "swap test";// 交易备注
+        // 设置手续费
+        String feeTo = "TNVTdTSPEn3kK94RqiMffiKkXTQ2anRwhN1J9";// 交易手续费接收地址
+        NerveTokenAmount feeTokenAmount = new NerveTokenAmount(5, 7, new BigInteger("9000"));// 手续费金额
+        Result result1 = NerveSDKTool.stableSwapTradeTx(from, to, tokenAmountIns, tokenOutIndex, pairAddress, feeTo, feeTokenAmount, remark);
+        Map map = (Map) result1.getData();
+        if (map == null) {
+            System.err.println(JSONUtils.obj2PrettyJson(result1));
+            return;
+        }
+
+        String txHex = map.get("txHex").toString();
+        // 私钥签名交易
+        String prikey = "76b7beaa98db863fb680def099af872978209ed9422b7acab8ab57ad95ab218b";
+        Result<Map> result = NerveSDKTool.sign(txHex, from, prikey);
+        txHex = (String) result.getData().get("txHex");
+        String txHash = (String) result.getData().get("hash");
+        System.out.println(String.format("交易序列化Hex字符串: %s", txHex));
+        System.out.println(String.format("交易hash: %s", txHash));
+
+        // 广播交易
+        //result = NerveSDKTool.broadcast(txHex);
+        //System.out.println(JSONUtils.obj2PrettyJson(result));
     }
 
     @Test

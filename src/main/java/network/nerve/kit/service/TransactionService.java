@@ -912,15 +912,20 @@ public class TransactionService {
     public Result stableSwapTradeTx(String from, String to,
                                     NerveTokenAmount[] tokenAmountIns, String[] nonces,
                                     int tokenOutIndex, String pairAddress,
-                                    String feeTo, String remark) {
+                                    String feeTo, NerveTokenAmount feeTokenAmount, String remark) {
         try {
             byte[] pairAddressBytes = AddressTool.getAddress(pairAddress);
             byte[] fromBytes = AddressTool.getAddress(from);
+            byte[] feeToBytes = feeTo != null ? AddressTool.getAddress(feeTo) : null;
+            boolean hasFee = false;
+            if (StringUtils.isNotBlank(feeTo) && feeTokenAmount != null) {
+                hasFee = true;
+            }
             // 组装交易
             StableSwapTradeData data = new StableSwapTradeData();
             data.setTo(AddressTool.getAddress(to));
             data.setTokenOutIndex((byte) tokenOutIndex);
-            data.setFeeTo(feeTo != null ? AddressTool.getAddress(feeTo) : null);
+            data.setFeeTo(feeToBytes);
 
             Transaction tx = new Transaction(TxType.SWAP_TRADE_STABLE_COIN);
             tx.setTxData(TxUtils.nulsData2HexBytes(data));
@@ -943,6 +948,14 @@ public class TransactionService {
                         amount,
                         HexUtil.decode(nonce),
                         (byte) 0));
+                if (hasFee && token.getChainId() == feeTokenAmount.getChainId() && token.getAssetId() == feeTokenAmount.getAssetId()) {
+                    amount = amount.subtract(feeTokenAmount.getAmount());
+                    tos.add(new CoinTo(
+                            feeToBytes,
+                            token.getChainId(),
+                            token.getAssetId(),
+                            feeTokenAmount.getAmount()));
+                }
                 tos.add(new CoinTo(
                         pairAddressBytes,
                         token.getChainId(),

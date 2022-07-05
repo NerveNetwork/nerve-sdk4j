@@ -987,7 +987,7 @@ public class NerveSDKTool {
             @Parameter(parameterName = "tokenAmountIns", parameterType = "NerveTokenAmount[]", parameterDes = "卖出的资产数量列表"),
             @Parameter(parameterName = "tokenOutIndex", parameterType = "int", parameterDes = "买进的资产索引(示例: 假设交易对是[usdt_eth, usdt_bsc, usdt_heco, usdt_okt]，用户想买进heco的usdt，则此处填2)"),
             @Parameter(parameterName = "pairAddress", parameterType = "String", parameterDes = "交易对地址"),
-            @Parameter(parameterName = "feeTo", parameterType = "String", parameterDes = "交易手续费取出一部分给指定的接收地址"),
+            @Parameter(parameterName = "feeTo", parameterType = "String", parameterDes = "交易手续费接收地址"),
             @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
     })
     @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
@@ -996,9 +996,34 @@ public class NerveSDKTool {
     }))
     public static Result stableSwapTradeTx(String from, String to,
                                            NerveTokenAmount[] tokenAmountIns,
-                                            int tokenOutIndex, String pairAddress,
-                                            String feeTo, String remark) {
-        return transactionService.stableSwapTradeTx(from, to, tokenAmountIns, null, tokenOutIndex, pairAddress, feeTo, remark);
+                                           int tokenOutIndex, String pairAddress,
+                                           String feeTo, String remark) {
+        return transactionService.stableSwapTradeTx(from, to, tokenAmountIns, null, tokenOutIndex, pairAddress, feeTo, null, remark);
+    }
+
+    /**
+     * Stable-Swap稳定币兑换交易
+     */
+    @ApiOperation(description = "Stable-Swap稳定币兑换交易", order = 375, detailDesc = "Stable-Swap稳定币兑换交易")
+    @Parameters({
+            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
+            @Parameter(parameterName = "to", parameterType = "String", parameterDes = "资产接收地址"),
+            @Parameter(parameterName = "tokenAmountIns", parameterType = "NerveTokenAmount[]", parameterDes = "卖出的资产数量列表"),
+            @Parameter(parameterName = "tokenOutIndex", parameterType = "int", parameterDes = "买进的资产索引(示例: 假设交易对是[usdt_eth, usdt_bsc, usdt_heco, usdt_okt]，用户想买进heco的usdt，则此处填2)"),
+            @Parameter(parameterName = "pairAddress", parameterType = "String", parameterDes = "交易对地址"),
+            @Parameter(parameterName = "feeTo", parameterType = "String", parameterDes = "交易手续费接收地址"),
+            @Parameter(parameterName = "feeTokenAmount", parameterType = "NerveTokenAmount", parameterDes = "交易手续费"),
+            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result stableSwapTradeTx(String from, String to,
+                                           NerveTokenAmount[] tokenAmountIns,
+                                           int tokenOutIndex, String pairAddress,
+                                           String feeTo, NerveTokenAmount feeTokenAmount, String remark) {
+        return transactionService.stableSwapTradeTx(from, to, tokenAmountIns, null, tokenOutIndex, pairAddress, feeTo, feeTokenAmount, remark);
     }
 
     /**
