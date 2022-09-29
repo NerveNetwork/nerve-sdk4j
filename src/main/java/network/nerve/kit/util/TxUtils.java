@@ -7,11 +7,16 @@ import network.nerve.base.data.BaseNulsData;
 import network.nerve.base.data.CoinFrom;
 import network.nerve.base.data.CoinTo;
 import network.nerve.base.signture.P2PHKSignature;
+import network.nerve.core.constant.CommonCodeConstanst;
+import network.nerve.core.crypto.Sha256Hash;
 import network.nerve.core.exception.NulsException;
 import network.nerve.core.exception.NulsRuntimeException;
+import network.nerve.core.model.ArraysTool;
 import network.nerve.core.model.BigIntegerUtils;
 import network.nerve.core.model.StringUtils;
+import network.nerve.core.parse.SerializeUtils;
 import network.nerve.kit.error.AccountErrorCode;
+import network.nerve.kit.model.NerveToken;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -24,6 +29,7 @@ import static network.nerve.SDKContext.*;
 public class TxUtils {
 
     private static final String HEX_REGEX="^[A-Fa-f0-9]+$";
+    private static final byte PAIR_ADDRESS_TYPE = 4;
 
     public static boolean isMainAsset(int chainId, int assetId) {
         return chainId == main_chain_id && assetId == SDKContext.main_asset_id;
@@ -158,5 +164,45 @@ public class TxUtils {
 
     public static boolean containsHexPrefix(String input) {
         return !StringUtils.isBlank(input) && input.length() > 1 && input.charAt(0) == '0' && input.charAt(1) == 'x';
+    }
+
+    public static String getStringPairAddress(int chainId, NerveToken token0, NerveToken token1) {
+        return AddressTool.getStringAddressByBytes(getPairAddress(chainId, token0, token1));
+    }
+
+    public static String getStringPairAddress(int chainId, NerveToken token0, NerveToken token1, String prefix) {
+        return AddressTool.getStringAddressByBytes(getPairAddress(chainId, token0, token1), prefix);
+    }
+
+    public static byte[] getPairAddress(int chainId, NerveToken token0, NerveToken token1) {
+        return getSwapAddress(chainId, token0, token1, PAIR_ADDRESS_TYPE);
+    }
+
+    private static byte[] getSwapAddress(int chainId, NerveToken token0, NerveToken token1, byte addressType) {
+        if (token0 == null || token1 == null) {
+            throw new NulsRuntimeException(CommonCodeConstanst.NULL_PARAMETER);
+        }
+        NerveToken[] array = tokenSort(token0, token1);
+        byte[] all = ArraysTool.concatenate(
+                Sha256Hash.hash(SerializeUtils.int32ToBytes(array[0].getChainId())),
+                Sha256Hash.hash(SerializeUtils.int32ToBytes(array[0].getAssetId())),
+                Sha256Hash.hash(SerializeUtils.int32ToBytes(array[1].getChainId())),
+                Sha256Hash.hash(SerializeUtils.int32ToBytes(array[1].getAssetId()))
+        );
+        return AddressTool.getAddress(Sha256Hash.hash(all), chainId, addressType);
+    }
+
+    public static NerveToken[] tokenSort(NerveToken token0, NerveToken token1) {
+        if (token0 == null || token1 == null) {
+            throw new NulsRuntimeException(CommonCodeConstanst.NULL_PARAMETER);
+        }
+        if (token0.getChainId() == token1.getChainId() && token0.getAssetId() == token1.getAssetId()) {
+            throw new NulsRuntimeException(CommonCodeConstanst.PARAMETER_ERROR);
+        }
+        boolean positiveSequence = token0.getChainId() < token1.getChainId() || (token0.getChainId() == token1.getChainId() && token0.getAssetId() < token1.getAssetId());
+        if (positiveSequence) {
+            return new NerveToken[]{token0, token1};
+        }
+        return new NerveToken[]{token1, token0};
     }
 }

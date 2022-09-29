@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static network.nerve.kit.constant.AccountConstant.ALIAS_FEE;
+import static network.nerve.kit.error.TxErrorCode.INVALID_PATH;
 import static network.nerve.kit.util.TxUtils.addressToLowerCase;
 import static network.nerve.kit.util.ValidateUtil.validateChainId;
 
@@ -2144,6 +2145,59 @@ public class TransactionService {
 
     public long getCurrentTimeSeconds() {
         return System.currentTimeMillis() / 1000;
+    }
+
+
+    public Result swapTradeTx(String from, BigInteger amountIn, NerveToken[] tokenPath, BigInteger amountOutMin, String feeTo, Long deadline, String to, String remark) {
+        try {
+            int chainId = SDKContext.main_chain_id;
+            byte[] fromBytes = AddressTool.getAddress(from);
+            byte[] feeToBytes = feeTo != null ? AddressTool.getAddress(feeTo) : null;
+
+            int length = tokenPath.length;
+            if (length < 2) {
+                return Result.getFailed(INVALID_PATH);
+            }
+            byte[] firstPairAddress = TxUtils.getPairAddress(chainId, tokenPath[0], tokenPath[1]);
+
+            // 组装交易
+            NerveToken tokenIn = tokenPath[0];
+            SwapTradeData data = new SwapTradeData();
+            data.setAmountOutMin(amountOutMin);
+            data.setTo(AddressTool.getAddress(to));
+            data.setFeeTo(feeTo != null ? AddressTool.getAddress(feeTo) : null);
+            data.setDeadline(deadline);
+            data.setPath(tokenPath);
+
+            Transaction tx = new Transaction(TxType.SWAP_TRADE);
+            tx.setTxData(TxUtils.nulsData2HexBytes(data));
+            tx.setTime(getCurrentTimeSeconds());
+            tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
+
+            CoinData coinData = new CoinData();
+            List<CoinFrom> froms = coinData.getFrom();
+            List<CoinTo> tos = coinData.getTo();
+            String nonce = this.checkNonce(from, tokenIn, null);
+            froms.add(new CoinFrom(
+                    fromBytes,
+                    tokenIn.getChainId(),
+                    tokenIn.getAssetId(),
+                    amountIn,
+                    HexUtil.decode(nonce),
+                    (byte) 0));
+            tos.add(new CoinTo(
+                    firstPairAddress,
+                    tokenIn.getChainId(),
+                    tokenIn.getAssetId(),
+                    amountIn));
+            tx.setCoinData(TxUtils.nulsData2HexBytes(coinData));
+            Map<String, Object> map = new HashMap<>();
+            map.put("hash", tx.getHash().toHex());
+            map.put("txHex", HexUtil.encode(TxUtils.nulsData2HexBytes(tx)));
+            return Result.getSuccess(map);
+        } catch (NulsException e) {
+            return Result.getFailed(e.getErrorCode()).setMsg(e.format());
+        }
     }
 }
 

@@ -6,7 +6,7 @@
 
   <groupId>network.nerve</groupId>
   <artifactId>nerve-sdk4j</artifactId>
-  <version>1.2.6</version>
+  <version>1.2.7</version>
 
   <name>nerve-sdk4j</name>
 

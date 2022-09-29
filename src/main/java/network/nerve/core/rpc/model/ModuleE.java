@@ -32,7 +32,7 @@ import java.util.Arrays;
  * @author tangyi
  */
 public enum ModuleE {
-    
+
     /**
      * prefix + name
      */
@@ -49,13 +49,20 @@ public enum ModuleE {
     PU("pu", Constant.PROTOCOL_UPDATE, ModuleE.DOMAIN),
     CC("cc", Constant.CROSS_CHAIN, ModuleE.DOMAIN),
     SC("sc", Constant.SMART_CONTRACT, ModuleE.DOMAIN),
-    AP("ap", Constant.API_MODULE, ModuleE.DOMAIN);
+    AP("ap", Constant.PUBLIC_SERVICE, ModuleE.DOMAIN),
+    DX("dex", Constant.DEX, ModuleE.DOMAIN),
+    DXP("dex-public-service", Constant.DEXPUBSERVICE, ModuleE.DOMAIN),
+    DXA("dex-api", Constant.DEXAPI, ModuleE.DOMAIN),
+    QU("qu", Constant.QUOTATION, ModuleE.DOMAIN),
+    CV("cv", Constant.CONVERTER, ModuleE.DOMAIN),
+    SW("sw", Constant.SWAP, ModuleE.DOMAIN);
+
 
     public static final String DOMAIN = "Nuls";
 
     public static class Constant {
-        
-        public static final String KERNEL = "kernel";
+
+        public static final String KERNEL = "mykernel";
 
         public static final String CHAIN_MANAGER = "chain-manager";
 
@@ -79,9 +86,21 @@ public enum ModuleE {
 
         public static final String SMART_CONTRACT = "smart-contract";
 
-        public static final String API_MODULE = "api-module";
+        public static final String PUBLIC_SERVICE = "public-service";
+
+        public static final String DEX = "dex";
+
+        public static final String DEXAPI = "dex-api";
+
+        public static final String DEXPUBSERVICE = "dex-public-service";
 
         public static final String CMD = "cmd-client";
+
+        public static final String QUOTATION = "quotation";
+
+        public static final String CONVERTER = "converter";
+
+        public static final String SWAP = "swap";
     }
 
     public final String abbr;
@@ -91,7 +110,7 @@ public enum ModuleE {
     public final String prefix;
 
     ModuleE(String prefix, String name, String domain) {
-        this.abbr = name;
+        this.abbr = name.toLowerCase();
         this.name = name.toLowerCase();
         this.domain = domain;
         this.prefix = prefix;

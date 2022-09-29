@@ -271,6 +271,15 @@ public class AddressTool {
         return address.getAddressBytes();
     }
 
+    public static byte[] getAddress(byte[] publicKey, int chainId, byte addressType) {
+        if (publicKey == null) {
+            return null;
+        }
+        byte[] hash160 = SerializeUtils.sha256hash160(publicKey);
+        Address address = new Address(chainId, BaseConstant.NERVE_MAINNET_DEFAULT_ADDRESS_PREFIX, addressType, hash160);
+        return address.getAddressBytes();
+    }
+
     /**
      * 生成校验位，根据以下字段生成：addressType+hash160(pubKey)
      *

@@ -285,6 +285,58 @@ public class TxType {
      */
     public static final int REGISTERED_CHAIN_CHANGE = 60;
     /**
+     * 创建swap交易对
+     */
+    public static final int CREATE_SWAP_PAIR = 61;
+
+    /**
+     * 创建挖矿池
+     */
+    public static final int FARM_CREATE = 62;
+
+    /**
+     * swap交易
+     */
+    public static final int SWAP_TRADE = 63;
+
+    /**
+     * 添加流动性
+     */
+    public static final int SWAP_ADD_LIQUIDITY = 64;
+
+    /**
+     * 撤销流动性
+     */
+    public static final int SWAP_REMOVE_LIQUIDITY = 65;
+
+    /**
+     * 质押挖矿
+     */
+    public static final int FARM_STAKE = 66;
+
+    /**
+     * 退出质押
+     */
+    public static final int FARM_WITHDRAW = 67;
+    /**
+     * SWAP系统成交交易
+     */
+    public static final int SWAP_SYSTEM_DEAL = 68;
+    /**
+     * SWAP系统退还交易
+     */
+    public static final int SWAP_SYSTEM_REFUND = 69;
+
+    /**
+     * FARM系统交易
+     */
+    public static final int FARM_SYSTEM_TX = 70;
+
+    /**
+     * 创建稳定币 pair
+     */
+    public static final int CREATE_SWAP_PAIR_STABLE_COIN = 71;
+    /**
      * swap稳定币交易
      */
     public static final int SWAP_TRADE_STABLE_COIN = 72;

@@ -62,5 +62,7 @@ public interface TxErrorCode extends CommonCodeConstanst {
     // ErrorCode EXIST_GAS_RETURN_WITHOUT_SC_RETURN = ErrorCode.init(ModuleE.TX.getPrefix() + "_0043");
     ErrorCode ADDRESS_LOCKED = ErrorCode.init(ModuleE.TX.getPrefix() + "_0043");
 
+    ErrorCode INVALID_PATH = ErrorCode.init(ModuleE.SW.getPrefix() + "_0006");
+
 
 }
