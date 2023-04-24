@@ -348,5 +348,13 @@ public class TxType {
      * 撤销稳定币流动性
      */
     public static final int SWAP_REMOVE_LIQUIDITY_STABLE_COIN = 74;
+    /**
+     * 稳定币流动性资产聚合swap交易
+     */
+    public static final int SWAP_STABLE_LP_SWAP_TRADE = 77;
+    /**
+     * swap交易聚合稳定币撤销流动性交易
+     */
+    public static final int SWAP_TRADE_SWAP_STABLE_REMOVE_LP = 83;
 
 }

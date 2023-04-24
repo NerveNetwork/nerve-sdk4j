@@ -1090,4 +1090,52 @@ public class NerveSDKTool {
                                      String feeTo, Long deadline, String to, String remark) {
         return transactionService.swapTradeTx(from, amountIn, tokenPath, amountOutMin, feeTo, deadline, to, remark);
     }
+
+    /**
+     * Swap聚合Stable流动性兑换交易
+     */
+    @ApiOperation(description = "Swap聚合Stable流动性兑换交易", order = 376, detailDesc = "Swap聚合Stable流动性兑换交易")
+    @Parameters({
+            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
+            @Parameter(parameterName = "stablePairAddress", parameterType = "String", parameterDes = "稳定币交易对地址"),
+            @Parameter(parameterName = "amountIn", parameterType = "BigInteger", parameterDes = "卖出的资产数量"),
+            @Parameter(parameterName = "tokenPath", parameterType = "NerveToken[]", parameterDes = "币币交换资产路径，路径中最后一个资产，是用户要买进的资产，如卖A买B: [A, stableLp, B] or [A, stableLp, C, B]"),
+            @Parameter(parameterName = "amountOutMin", parameterType = "BigInteger", parameterDes = "最小买进的资产数量"),
+            @Parameter(parameterName = "feeTo", parameterType = "String", parameterDes = "交易手续费取出一部分给指定的接收地址"),
+            @Parameter(parameterName = "deadline", parameterType = "long", parameterDes = "过期时间"),
+            @Parameter(parameterName = "to", parameterType = "String", parameterDes = "资产接收地址"),
+            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result stableLpSwapTrade(String from, String stablePairAddress, BigInteger amountIn, NerveToken[] tokenPath, BigInteger amountOutMin,
+                                     String feeTo, Long deadline, String to, String remark) {
+        return transactionService.stableLpSwapTrade(from, stablePairAddress, amountIn, tokenPath, amountOutMin, feeTo, deadline, to, remark);
+    }
+
+    /**
+     * Swap交易聚合稳定币撤销流动性交易
+     */
+    @ApiOperation(description = "Swap交易聚合稳定币撤销流动性交易", order = 377, detailDesc = "Swap交易聚合稳定币撤销流动性交易")
+    @Parameters({
+            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
+            @Parameter(parameterName = "amountIn", parameterType = "BigInteger", parameterDes = "卖出的资产数量"),
+            @Parameter(parameterName = "tokenPath", parameterType = "NerveToken[]", parameterDes = "币币交换资产路径，路径中最后一个资产，是用户要买进的资产，如卖A买B: [A, B] or [A, C, B]"),
+            @Parameter(parameterName = "amountOutMin", parameterType = "BigInteger", parameterDes = "最小买进的资产数量"),
+            @Parameter(parameterName = "feeTo", parameterType = "String", parameterDes = "交易手续费取出一部分给指定的接收地址"),
+            @Parameter(parameterName = "deadline", parameterType = "long", parameterDes = "过期时间"),
+            @Parameter(parameterName = "to", parameterType = "String", parameterDes = "资产接收地址"),
+            @Parameter(parameterName = "targetToken", parameterType = "NerveToken", parameterDes = "撤销稳定币流动性换出的资产，示例：1-1"),
+            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result swapTradeStableRemoveLp(String from, BigInteger amountIn, NerveToken[] tokenPath, BigInteger amountOutMin,
+                                     String feeTo, Long deadline, String to, NerveToken targetToken, String remark) {
+        return transactionService.swapTradeStableRemoveLp(from, amountIn, tokenPath, amountOutMin, feeTo, deadline, to, targetToken, remark);
+    }
 }
