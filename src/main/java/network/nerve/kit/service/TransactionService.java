@@ -2149,9 +2149,118 @@ public class TransactionService {
         return System.currentTimeMillis() / 1000;
     }
 
+    public Result swapCreatePair(String from, NerveToken tokenA, NerveToken tokenB, String remark) {
+        try {
+            int chainId = SDKContext.main_chain_id;
+            // 组装交易
+            CreatePairData data = new CreatePairData();
+            data.setToken0(tokenA);
+            data.setToken1(tokenB);
+            Transaction tx = new Transaction(TxType.CREATE_SWAP_PAIR);
+            tx.setTxData(TxUtils.nulsData2HexBytes(data));
+            tx.setTime(getCurrentTimeSeconds());
+            tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
+
+            CoinData coinData = new CoinData();
+            List<CoinFrom> froms = coinData.getFrom();
+            List<CoinTo> tos = coinData.getTo();
+            NerveToken mainToken = new NerveToken(chainId, 1);
+            String nonce = this.checkNonce(from, mainToken, null);
+            byte[] fromBytes = AddressTool.getAddress(from);
+            froms.add(new CoinFrom(
+                    fromBytes,
+                    mainToken.getChainId(),
+                    mainToken.getAssetId(),
+                    BigInteger.ZERO,
+                    HexUtil.decode(nonce),
+                    (byte) 0));
+            tos.add(new CoinTo(
+                    fromBytes,
+                    mainToken.getChainId(),
+                    mainToken.getAssetId(),
+                    BigInteger.ZERO));
+            tx.setCoinData(TxUtils.nulsData2HexBytes(coinData));
+            Map<String, Object> map = new HashMap<>();
+            map.put("hash", tx.getHash().toHex());
+            map.put("txHex", HexUtil.encode(TxUtils.nulsData2HexBytes(tx)));
+            return Result.getSuccess(map);
+        } catch (NulsException e) {
+            return Result.getFailed(e.getErrorCode()).setMsg(e.format());
+        }
+    }
+
+    public Result swapAddLiquidity(String from,
+                     BigInteger amountA, BigInteger amountB,
+                     NerveToken tokenA, NerveToken tokenB,
+                     BigInteger amountAMin, BigInteger amountBMin,
+                     Long deadline, String to, String remark) {
+        try {
+            long currentTimeSeconds = getCurrentTimeSeconds();
+            if (deadline == null || deadline.longValue() <= 0) {
+                deadline = currentTimeSeconds + 300;
+            }
+            int chainId = SDKContext.main_chain_id;
+            byte[] fromBytes = AddressTool.getAddress(from);
+            byte[] pairAddress = TxUtils.getPairAddress(chainId, tokenA, tokenB);
+            // 组装交易
+            AddLiquidityData data = new AddLiquidityData();
+            data.setTokenA(tokenA);
+            data.setTokenB(tokenB);
+            data.setTo(AddressTool.getAddress(to));
+            data.setDeadline(deadline);
+            data.setAmountAMin(amountAMin);
+            data.setAmountBMin(amountBMin);
+
+            Transaction tx = new Transaction(TxType.SWAP_ADD_LIQUIDITY);
+            tx.setTxData(TxUtils.nulsData2HexBytes(data));
+            tx.setTime(getCurrentTimeSeconds());
+            tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
+
+            CoinData coinData = new CoinData();
+            List<CoinFrom> froms = coinData.getFrom();
+            List<CoinTo> tos = coinData.getTo();
+            String nonceA = this.checkNonce(from, tokenA, null);
+            String nonceB = this.checkNonce(from, tokenB, null);
+            froms.add(new CoinFrom(
+                    fromBytes,
+                    tokenA.getChainId(),
+                    tokenA.getAssetId(),
+                    amountA,
+                    HexUtil.decode(nonceA),
+                    (byte) 0));
+            froms.add(new CoinFrom(
+                    fromBytes,
+                    tokenB.getChainId(),
+                    tokenB.getAssetId(),
+                    amountB,
+                    HexUtil.decode(nonceB),
+                    (byte) 0));
+            tos.add(new CoinTo(
+                    pairAddress,
+                    tokenA.getChainId(),
+                    tokenA.getAssetId(),
+                    amountA));
+            tos.add(new CoinTo(
+                    pairAddress,
+                    tokenB.getChainId(),
+                    tokenB.getAssetId(),
+                    amountB));
+            tx.setCoinData(TxUtils.nulsData2HexBytes(coinData));
+            Map<String, Object> map = new HashMap<>();
+            map.put("hash", tx.getHash().toHex());
+            map.put("txHex", HexUtil.encode(TxUtils.nulsData2HexBytes(tx)));
+            return Result.getSuccess(map);
+        } catch (NulsException e) {
+            return Result.getFailed(e.getErrorCode()).setMsg(e.format());
+        }
+    }
 
     public Result swapTradeTx(String from, BigInteger amountIn, NerveToken[] tokenPath, BigInteger amountOutMin, String feeTo, Long deadline, String to, String remark) {
         try {
+            long currentTimeSeconds = getCurrentTimeSeconds();
+            if (deadline == null || deadline.longValue() <= 0) {
+                deadline = currentTimeSeconds + 300;
+            }
             int chainId = SDKContext.main_chain_id;
             byte[] fromBytes = AddressTool.getAddress(from);
             byte[] feeToBytes = feeTo != null ? AddressTool.getAddress(feeTo) : null;

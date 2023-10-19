@@ -1138,4 +1138,44 @@ public class NerveSDKTool {
                                      String feeTo, Long deadline, String to, NerveToken targetToken, String remark) {
         return transactionService.swapTradeStableRemoveLp(from, amountIn, tokenPath, amountOutMin, feeTo, deadline, to, targetToken, remark);
     }
+
+    @ApiOperation(description = "创建Swap交易对", order = 378, detailDesc = "创建Swap交易对")
+    @Parameters(value = {
+            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
+            @Parameter(parameterName = "tokenA", parameterType = "NerveToken", parameterDes = "资产A的类型，示例：1-1"),
+            @Parameter(parameterName = "tokenB", parameterType = "NerveToken", parameterDes = "资产B的类型，示例：1-1"),
+            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result swapCreatePair(String from, NerveToken tokenA, NerveToken tokenB, String remark) {
+        return transactionService.swapCreatePair(from, tokenA, tokenB, remark);
+    }
+
+    @ApiOperation(description = "添加Swap流动性", order = 379, detailDesc = "添加Swap流动性")
+    @Parameters(value = {
+            @Parameter(parameterName = "from", parameterType = "String", parameterDes = "账户地址"),
+            @Parameter(parameterName = "amountA", parameterType = "String", parameterDes = "添加的资产A的数量"),
+            @Parameter(parameterName = "amountB", parameterType = "String", parameterDes = "添加的资产B的数量"),
+            @Parameter(parameterName = "tokenA", parameterType = "NerveToken", parameterDes = "资产A的类型，示例：1-1"),
+            @Parameter(parameterName = "tokenB", parameterType = "NerveToken", parameterDes = "资产B的类型，示例：1-1"),
+            @Parameter(parameterName = "amountAMin", parameterType = "String", parameterDes = "资产A最小添加值"),
+            @Parameter(parameterName = "amountBMin", parameterType = "String", parameterDes = "资产B最小添加值"),
+            @Parameter(parameterName = "deadline", parameterType = "long", parameterDes = "过期时间"),
+            @Parameter(parameterName = "to", parameterType = "String", parameterDes = "流动性份额接收地址"),
+            @Parameter(parameterName = "remark", parameterType = "String", parameterDes = "交易备注")
+    })
+    @ResponseData(name = "返回值", description = "返回一个Map对象", responseType = @TypeDescriptor(value = Map.class, mapKeys = {
+            @Key(name = "hash", description = "交易hash"),
+            @Key(name = "txHex", description = "交易序列化16进制字符串")
+    }))
+    public static Result swapAddLiquidity(String from,
+                                          BigInteger amountA, BigInteger amountB,
+                                          NerveToken tokenA, NerveToken tokenB,
+                                          BigInteger amountAMin, BigInteger amountBMin,
+                                          Long deadline, String to, String remark) {
+        return transactionService.swapAddLiquidity(from, amountA, amountB, tokenA, tokenB, amountAMin, amountBMin, deadline, to, remark);
+    }
 }

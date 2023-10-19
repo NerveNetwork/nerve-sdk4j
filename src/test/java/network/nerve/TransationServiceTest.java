@@ -307,6 +307,68 @@ public class TransationServiceTest {
     }
 
     @Test
+    public void swapCreatePairTest() throws Exception {
+        // 组装交易
+        String from = "TNVTdTSPRnXkDiagy7enti1KL75NU5AxC9sQA";// 账户地址
+        NerveToken tokenA = new NerveToken(5, 1);
+        NerveToken tokenB = new NerveToken(5, 2);
+        String remark = "swapCreatePair test";// 交易备注
+        Result result1 = NerveSDKTool.swapCreatePair(from, tokenA, tokenB, remark);
+        Map map = (Map) result1.getData();
+        if (map == null) {
+            System.err.println(JSONUtils.obj2PrettyJson(result1));
+            return;
+        }
+
+        String txHex = map.get("txHex").toString();
+        // 私钥签名交易
+        String prikey = "4594348E3482B751AA235B8E580EFEF69DB465B3A291C5662CEDA6459ED12E39";
+        Result<Map> result = NerveSDKTool.sign(txHex, from, prikey);
+        txHex = (String) result.getData().get("txHex");
+        String txHash = (String) result.getData().get("hash");
+        System.out.println(String.format("交易序列化Hex字符串: %s", txHex));
+        System.out.println(String.format("交易hash: %s", txHash));
+
+        // 广播交易
+        //result = NerveSDKTool.broadcast(txHex);
+        //System.out.println(JSONUtils.obj2PrettyJson(result));
+    }
+
+    @Test
+    public void swapAddLiquidityTest() throws Exception {
+        // 组装交易
+        String from = "TNVTdTSPRnXkDiagy7enti1KL75NU5AxC9sQA";// 账户地址
+        String to = "TNVTdTSPRnXkDiagy7enti1KL75NU5AxC9sQA";// 资产接收地址
+        BigInteger amountA = new BigInteger("300000000000000000000000");
+        BigInteger amountB = new BigInteger("2000000000000000000");
+        NerveToken tokenA = new NerveToken(5, 1);
+        NerveToken tokenB = new NerveToken(5, 2);
+        BigInteger amountAMin = BigInteger.ZERO;
+        BigInteger amountBMin = BigInteger.ZERO;
+        Long deadline = null;
+        String remark = "swapAddLiquidity test";// 交易备注
+        Result result1 = NerveSDKTool.swapAddLiquidity(from, amountA, amountB, tokenA, tokenB, amountAMin, amountBMin, deadline, to, remark);
+        Map map = (Map) result1.getData();
+        if (map == null) {
+            System.err.println(JSONUtils.obj2PrettyJson(result1));
+            return;
+        }
+
+        String txHex = map.get("txHex").toString();
+        // 私钥签名交易
+        String prikey = "4594348E3482B751AA235B8E580EFEF69DB465B3A291C5662CEDA6459ED12E39";
+        Result<Map> result = NerveSDKTool.sign(txHex, from, prikey);
+        txHex = (String) result.getData().get("txHex");
+        String txHash = (String) result.getData().get("hash");
+        System.out.println(String.format("交易序列化Hex字符串: %s", txHex));
+        System.out.println(String.format("交易hash: %s", txHash));
+
+        // 广播交易
+        //result = NerveSDKTool.broadcast(txHex);
+        //System.out.println(JSONUtils.obj2PrettyJson(result));
+    }
+
+    @Test
     public void testBroadTx() {
         String txHex = "02003c812b5f0672656d61726b008c0117050001f7ec6473df12e751d64cf20a8baa7edd50810f810500010000e18a79c2480000000000000000000000000000000000000000000000000000089cd92b91c5e536540001170500017fe9a685e43b3124e00fd9c8e4e59158baea63450200010000009573c24800000000000000000000000000000000000000000000000000000000000000000000692103958b790c331954ed367d37bac901de5c2f06ac8368b37d7bd6cd5ae143c1d7e346304402205e335bf49a5e1d963df18b5349ebc4642e1db9dc3c6a876fa318dc375f10e18502206511b6bbffb77a40bc966cb725d7835b4122b4d5ccbd5fddf37e5c4d0a161874";
         //广播
