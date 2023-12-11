@@ -858,6 +858,9 @@ public class TransactionService {
      */
     public Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark, String nonce) {
         try {
+            if (time == 0) {
+                time = getCurrentTimeSeconds();
+            }
             //转账交易转出地址必须是本链地址
             if (!AddressTool.validAddress(SDKContext.main_chain_id, fromAddress)) {
                 throw new NulsException(AccountErrorCode.IS_NOT_CURRENT_CHAIN_ADDRESS);
