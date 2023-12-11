@@ -238,15 +238,16 @@ public class NaboxCollectionTest {
 
     @Test
     public void withdrawalAdditionalFeeTx() throws Exception {
-        String fromAddress = "TNVTdTSPEn3kK94RqiMffiKkXTQ2anRwhN1J9";
-        String withdrawalTxHash = "2dae6440f691e08552dd707a22412a6474c91e8f10810fd0dbddac301b167dff";
-        BigInteger amount = new BigInteger("1000000000");
+        NerveSDKBootStrap.initMain("https://api.nerve.network/");
+        String fromAddress = "NERVEepb65mFoxeXfQN5KgeKxRTfufKekBAn3C";
+        String withdrawalTxHash = "1eb250b29fa08ea9f381b83fe746a5284405989bd154b65b56751bd86e3e10d3";
+        BigInteger amount = new BigInteger("100000000000");
         String remark = null;
         Result<Map> result = NerveSDKTool.withdrawalAdditionalFeeTx(fromAddress, withdrawalTxHash, amount, 0, remark);
 
         String txHex = (String) result.getData().get("txHex");
         //签名
-        String prikey = "b36097415f57fe0ac1665858e3d007ba066a7c022ec712928d2372b27e8513ff";
+        String prikey = "???";
         result = NerveSDKTool.sign(txHex, fromAddress, prikey);
         txHex = (String) result.getData().get("txHex");
         String txHash = (String) result.getData().get("hash");
