@@ -6,7 +6,7 @@
 
   <groupId>network.nerve</groupId>
   <artifactId>nerve-sdk4j</artifactId>
-  <version>1.3.1</version>
+  <version>1.3.2</version>
 
   <name>nerve-sdk4j</name>
 
@@ -375,11 +375,11 @@
   <distributionManagement>
     <repository>
       <id>maven-releases</id>
-      <url>http://nexus.nuls.io/repository/nuls-release/</url>
+      <url>https://nexus.nuls.io/repository/release/</url>
     </repository>
     <snapshotRepository>
       <id>maven-snapshots</id>
-      <url>http://nexus.nuls.io/repository/nuls-snapshot/</url>
+      <url>https://nexus.nuls.io/repository/snapshot/</url>
     </snapshotRepository>
   </distributionManagement>
 </project>

@@ -30,8 +30,9 @@ public class TransationServiceTest {
 
     @Before
     public void before() {
-        NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
+        //NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://beta.api.nerve.network/");
         //NerveSDKBootStrap.init(5, 2, "TNVT","tNULS", "http://127.0.0.1:17004/");
+        NerveSDKBootStrap.initMain("https://api.nerve.network/");
     }
 
     @Test
@@ -433,6 +434,68 @@ public class TransationServiceTest {
         String txHash = (String) result.getData().get("hash");
         //广播
         result = NerveSDKTool.broadcast(txHex);
+    }
+
+    List<String> addrList = new ArrayList<>();
+
+    @Test
+    public void testCreateMultiAddressTransferTx() throws JsonProcessingException {
+        String fromAddress = "NERVEepb6fVg8YtGWCgdpFj8CzkYE6Q5oB9sR4";
+        addrList.add("NERVEepb6EFiL4arAYVyBoYck5Khu1Ux4pXZmH");
+        addrList.add("NERVEepb68Crmh2r75qrBMNW93h6rmrPVFqGGs");
+        addrList.add("NERVEepb62Bh4fs1jRuzT1jUxNKAjd73EH3r8c");
+        addrList.add("NERVEepb6AAucXMTFWY4Bk4tjRieBDdLP4dsrq");
+        addrList.add("NERVEepb6CWoSnZtpH8gpcnydQcqzc1xADr6Ug");
+        addrList.add("NERVEepb67MLcawHHT7RPXzV6rH2YmybFbmEWV");
+        addrList.add("NERVEepb63UTLhKHcozBKTdJdB64o8H21QkwUd");
+        int chainId = 9;
+        int assetId = 787;
+
+        MultiSignTransferDto transferDto = new MultiSignTransferDto();
+        List<String> pubKeys = new ArrayList<>();
+        pubKeys.add("03d0b081eba85eb7727be65e1a9aadae6f82506c667dc3747921f729ecadef8e2f");
+        pubKeys.add("030ba2343bec1a522daacf0aca254b3705c1faaf2290c1227ca43aafd51ea13dc0");
+        pubKeys.add("02d61bc82688583e2f4b25e92ee605017ef6bf6e595869196706fae11a57e1c924");
+        transferDto.setPubKeys(pubKeys);
+        transferDto.setMinSigns(2);
+
+        List<CoinFromDto> inputs = new ArrayList<>();
+
+        List<CoinToDto> outputs = new ArrayList<>();
+
+        BigInteger total = BigInteger.ZERO;
+        for (String addr : addrList) {
+            CoinToDto to = new CoinToDto();
+            to.setAddress(addr);
+            to.setAmount(new BigInteger("120000"));
+            to.setAssetChainId(chainId);
+            to.setAssetId(assetId);
+            outputs.add(to);
+            total = total.add(to.getAmount());
+        }
+
+        CoinFromDto from = new CoinFromDto();
+        from.setAddress(fromAddress);
+        from.setAmount(total);
+        from.setAssetChainId(chainId);
+        from.setAssetId(assetId);
+        from.setNonce("0000000000000000");
+        inputs.add(from);
+
+
+        transferDto.setInputs(inputs);
+        transferDto.setOutputs(outputs);
+
+        Result<Map> result = NerveSDKTool.createMultiSignTransferTxOffline(transferDto);
+        //String txHex = (String) result.getData().get("txHex");
+
+        System.out.println(JSONUtils.obj2PrettyJson(result));
+        //签名
+        //String prikey = "";
+        //result = NerveSDKTool.sign(txHex, fromAddress, prikey);
+        //txHex = (String) result.getData().get("txHex");
+        //
+        //String txHash = (String) result.getData().get("hash");
     }
 
 

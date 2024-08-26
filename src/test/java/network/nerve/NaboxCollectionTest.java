@@ -360,7 +360,7 @@ public class NaboxCollectionTest {
 
         /**************************************** 以下是完全离线方式组装提现交易 ****************************************/
         // 组装离线交易
-        Result<Map> result = NerveSDKTool.withdrawalAdditionalFeeTx(fromAddress, withdrawalTxHash, amount, 0, remark, nvtFeeAssetNonce);
+        Result<Map> result = NerveSDKTool.withdrawalAdditionalFeeTxOffline(fromAddress, withdrawalTxHash, amount, SDKContext.main_chain_id, SDKContext.main_asset_id, 0, remark, nvtFeeAssetNonce);
         String txHex = (String) result.getData().get("txHex");
         // 离线交易签名
 

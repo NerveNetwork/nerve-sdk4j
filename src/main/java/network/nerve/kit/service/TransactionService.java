@@ -856,7 +856,11 @@ public class TransactionService {
      * @param remark
      * @return
      */
-    public Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark, String nonce) {
+    public Result withdrawalAdditionalFeeTxWithNVT(String fromAddress, String txHash, BigInteger amount, long time, String remark, String nonce) {
+        return this.withdrawalAdditionalFeeTxByWholeData(fromAddress, txHash, amount, SDKContext.main_chain_id, SDKContext.main_asset_id, time, remark, nonce);
+    }
+
+    public Result withdrawalAdditionalFeeTxByWholeData(String fromAddress, String txHash, BigInteger amount, int assetChainId, int assetId, long time, String remark, String nonce) {
         try {
             if (time == 0) {
                 time = getCurrentTimeSeconds();
@@ -884,10 +888,15 @@ public class TransactionService {
             tx.setRemark(StringUtils.isBlank(remark) ? null : StringUtils.bytes(remark));
             byte[] coinData;
             if (nonce == null) {
-                coinData = assembleFeeCoinData(fromAddress, amount);
-            } else {
-                coinData = assembleFeeCoinData(fromAddress, amount, nonce);
+                Result accountBalance = NerveSDKTool.getAccountBalance(fromAddress, assetChainId, assetId);
+                if (!accountBalance.isSuccess()) {
+                    throw new NulsException(AccountErrorCode.NOT_FOUND_NONCE);
+                }
+                Map balanceMap = (Map) accountBalance.getData();
+                //查询账本获取nonce值
+                nonce = balanceMap.get("nonce").toString();
             }
+            coinData = assembleFeeCoinData(fromAddress, amount, assetChainId, assetId, nonce);
             tx.setCoinData(coinData);
             tx.setHash(NulsHash.calcHash(tx.serializeForHash()));
 
@@ -1342,6 +1351,37 @@ public class TransactionService {
 
         int assetChainId = SDKContext.main_chain_id;
         int assetId = SDKContext.main_asset_id;
+        BigInteger amount = TransactionFeeCalculator.NORMAL_PRICE_PRE_1024_BYTES.add(extraFee);
+        CoinFrom coinFrom = new CoinFrom(
+                AddressTool.getAddress(address),
+                assetChainId,
+                assetId,
+                amount,
+                HexUtil.decode(nonce),
+                (byte) 0);
+        CoinData coinData = new CoinData();
+        List<CoinFrom> froms = new ArrayList<>();
+        froms.add(coinFrom);
+
+        List<CoinTo> tos = new ArrayList<>();
+        CoinTo extraFeeCoinTo = new CoinTo(
+                AddressTool.getAddress(Constant.FEE_PUBKEY, assetChainId),
+                assetChainId,
+                assetId,
+                extraFee);
+        tos.add(extraFeeCoinTo);
+
+        coinData.setFrom(froms);
+        coinData.setTo(tos);
+        try {
+            return coinData.serialize();
+        } catch (IOException e) {
+            throw new NulsException(AccountErrorCode.SERIALIZE_ERROR);
+        }
+    }
+
+    private byte[] assembleFeeCoinData(String address, BigInteger extraFee, int assetChainId, int assetId, String nonce) throws NulsException {
+
         BigInteger amount = TransactionFeeCalculator.NORMAL_PRICE_PRE_1024_BYTES.add(extraFee);
         CoinFrom coinFrom = new CoinFrom(
                 AddressTool.getAddress(address),

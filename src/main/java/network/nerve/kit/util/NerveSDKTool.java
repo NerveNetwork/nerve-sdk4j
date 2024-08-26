@@ -812,7 +812,7 @@ public class NerveSDKTool {
             @Key(name = "txHex", description = "交易序列化16进制字符串")
     }))
     public static Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark) {
-        return transactionService.withdrawalAdditionalFeeTx(fromAddress, txHash, amount, time, remark, null);
+        return transactionService.withdrawalAdditionalFeeTxWithNVT(fromAddress, txHash, amount, time, remark, null);
     }
 
 
@@ -851,6 +851,8 @@ public class NerveSDKTool {
             @Parameter(parameterName = "fromAddress", requestType = @TypeDescriptor(value = String.class), parameterDes = "转出地址(当前链地址)"),
             @Parameter(parameterName = "txHash", requestType = @TypeDescriptor(value = String.class), parameterDes = "要追加手续费的提现交易hash"),
             @Parameter(parameterName = "amount", requestType = @TypeDescriptor(value = BigInteger.class), parameterDes = "追加手续费数量"),
+            @Parameter(parameterName = "assetChainId", parameterDes = "资产链ID", requestType = @TypeDescriptor(value = int.class)),
+            @Parameter(parameterName = "assetId", parameterDes = "资产ID", requestType = @TypeDescriptor(value = int.class)),
             @Parameter(parameterName = "time", requestType = @TypeDescriptor(value = long.class), parameterDes = "时间"),
             @Parameter(parameterName = "remark", requestType = @TypeDescriptor(value = String.class), parameterDes = "备注"),
             @Parameter(parameterName = "nonce", parameterDes = "nvt手续费资产的nonce")
@@ -859,8 +861,8 @@ public class NerveSDKTool {
             @Key(name = "hash", description = "交易hash"),
             @Key(name = "txHex", description = "交易序列化16进制字符串")
     }))
-    public static Result withdrawalAdditionalFeeTx(String fromAddress, String txHash, BigInteger amount, long time, String remark, String nonce) {
-        return transactionService.withdrawalAdditionalFeeTx(fromAddress, txHash, amount, time, remark, nonce);
+    public static Result withdrawalAdditionalFeeTxOffline(String fromAddress, String txHash, BigInteger amount, int assetChainId, int assetId, long time, String remark, String nonce) {
+        return transactionService.withdrawalAdditionalFeeTxByWholeData(fromAddress, txHash, amount, assetChainId, assetId, time, remark, nonce);
     }
 
 
