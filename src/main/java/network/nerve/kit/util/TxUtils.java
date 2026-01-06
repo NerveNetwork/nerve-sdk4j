@@ -19,12 +19,14 @@ import network.nerve.kit.error.AccountErrorCode;
 import network.nerve.kit.model.NerveToken;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static network.nerve.SDKContext.*;
+import static network.nerve.core.model.StringUtils.isBlank;
 
 public class TxUtils {
 
@@ -141,14 +143,14 @@ public class TxUtils {
     }
 
     public static boolean isHexStr(String str) {
-        if(StringUtils.isBlank(str)) {
+        if(isBlank(str)) {
             return false;
         }
         return str.matches(HEX_REGEX);
     }
 
     public static String addressToLowerCase(String address) {
-        if (StringUtils.isBlank(address)) {
+        if (isBlank(address)) {
             return address;
         }
         String validAddress = cleanHexPrefix(address);
@@ -163,7 +165,7 @@ public class TxUtils {
     }
 
     public static boolean containsHexPrefix(String input) {
-        return !StringUtils.isBlank(input) && input.length() > 1 && input.charAt(0) == '0' && input.charAt(1) == 'x';
+        return !isBlank(input) && input.length() > 1 && input.charAt(0) == '0' && input.charAt(1) == 'x';
     }
 
     public static String getStringPairAddress(int chainId, NerveToken token0, NerveToken token1) {
@@ -204,5 +206,58 @@ public class TxUtils {
             return new NerveToken[]{token0, token1};
         }
         return new NerveToken[]{token1, token0};
+    }
+
+    static final String STRING = "String";
+    public static String[][] twoDimensionalArray(Object[] args, String[] types) {
+        if (args == null) {
+            return null;
+        } else {
+            int length = args.length;
+            String[][] two = new String[length][];
+            Object arg;
+            for (int i = 0; i < length; i++) {
+                arg = args[i];
+                if (arg == null) {
+                    two[i] = new String[0];
+                    continue;
+                }
+                if (arg instanceof String) {
+                    String argStr = (String) arg;
+                    // 非String类型参数，若传参是空字符串，则赋值为空一维数组，避免数字类型转化异常 -> 空字符串转化为数字
+                    if (types != null && isBlank(argStr) && !STRING.equalsIgnoreCase(types[i])) {
+                        two[i] = new String[0];
+                    } else {
+                        two[i] = new String[]{argStr};
+                    }
+                } else if (arg.getClass().isArray()) {
+                    int len = Array.getLength(arg);
+                    String[] result = new String[len];
+                    for (int k = 0; k < len; k++) {
+                        result[k] = valueOf(Array.get(arg, k));
+                    }
+                    two[i] = result;
+                } else if (arg instanceof List) {
+                    List resultArg = (List) arg;
+                    int size = resultArg.size();
+                    String[] result = new String[size];
+                    for (int k = 0; k < size; k++) {
+                        result[k] = valueOf(resultArg.get(k));
+                    }
+                    two[i] = result;
+                } else {
+                    two[i] = new String[]{valueOf(arg)};
+                }
+            }
+            return two;
+        }
+    }
+
+    public static String[][] twoDimensionalArray(Object[] args) {
+        return twoDimensionalArray(args, null);
+    }
+
+    public static String valueOf(Object obj) {
+        return (obj == null) ? null : obj.toString();
     }
 }

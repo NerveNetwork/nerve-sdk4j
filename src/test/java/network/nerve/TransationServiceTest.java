@@ -390,15 +390,11 @@ public class TransationServiceTest {
     }
 
     @Test
-    public void testCreateTransferTx() {
-        String fromAddress = "TNVTdTSPLmP6SKyn2RigSA8Lr9bMTgjUhnve4";
-        String toAddress = "tNULSeBaMsEfHKEXvaFPPpQomXipeCYrru6t81";
+    public void testCreateTransferTx() throws JsonProcessingException {
+        String fromAddress = "NERVEepb67GsWfNZ4EpmuNyAZbr3wybGq8DP57";
+        String toAddress = "NERVEepb61R6tii7FzrXFpagKi2muBxnEcqQpp";
 
-        TransferTxFeeDto feeDto = new TransferTxFeeDto();
-        feeDto.setAddressCount(1);
-        feeDto.setFromLength(1);
-        feeDto.setToLength(1);
-        BigInteger fee = NerveSDKTool.calcTransferTxFee(feeDto);
+        BigInteger fee = BigInteger.ZERO;
 
         TransferDto transferDto = new TransferDto();
 
@@ -406,18 +402,19 @@ public class TransationServiceTest {
 
         CoinFromDto from = new CoinFromDto();
         from.setAddress(fromAddress);
-        from.setAmount(new BigInteger("10000000").add(fee));
-        from.setAssetChainId(SDKContext.main_chain_id);
-        from.setAssetId(SDKContext.main_asset_id);
-        from.setNonce("0000000000000000");
+        from.setAmount(new BigInteger("64488836437165972"));
+        from.setAssetChainId(9);
+        from.setAssetId(649);
+        from.setNonce("a514623bf12a0f5d");
         inputs.add(from);
 
         List<CoinToDto> outputs = new ArrayList<>();
         CoinToDto to = new CoinToDto();
         to.setAddress(toAddress);
-        to.setAmount(new BigInteger("10000000"));
-        to.setAssetChainId(SDKContext.main_chain_id);
-        to.setAssetId(SDKContext.main_asset_id);
+        to.setAmount(new BigInteger("64488836437165972"));
+        to.setAssetChainId(9);
+        to.setAssetId(649);
+        to.setLockTime(1744247249);
         outputs.add(to);
 
         transferDto.setInputs(inputs);
@@ -425,6 +422,7 @@ public class TransationServiceTest {
 
         Result<Map> result = NerveSDKTool.createTransferTxOffline(transferDto);
         String txHex = (String) result.getData().get("txHex");
+        System.out.println(txHex);
 
         //签名
         String prikey = "";
@@ -434,6 +432,7 @@ public class TransationServiceTest {
         String txHash = (String) result.getData().get("hash");
         //广播
         result = NerveSDKTool.broadcast(txHex);
+        System.out.println(JSONUtils.obj2PrettyJson(result));
     }
 
     List<String> addrList = new ArrayList<>();
