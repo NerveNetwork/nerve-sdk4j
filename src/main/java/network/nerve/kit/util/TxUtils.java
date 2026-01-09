@@ -20,6 +20,7 @@ import network.nerve.kit.model.NerveToken;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
@@ -206,6 +207,18 @@ public class TxUtils {
             return new NerveToken[]{token0, token1};
         }
         return new NerveToken[]{token1, token0};
+    }
+
+    public static BigInteger parse18(String amount) {
+        return new BigDecimal(amount).movePointRight(18).toBigInteger();
+    }
+
+    public static String format18(String amount) {
+        return new BigDecimal(amount).movePointLeft(18).stripTrailingZeros().toPlainString();
+    }
+
+    public static String format18(BigInteger amount) {
+        return new BigDecimal(amount).movePointLeft(18).stripTrailingZeros().toPlainString();
     }
 
     static final String STRING = "String";
