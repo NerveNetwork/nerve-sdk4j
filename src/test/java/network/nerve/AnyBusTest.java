@@ -46,6 +46,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.*;
 
 import static network.nerve.core.rpc.util.NulsDateUtils.getCurrentTimeSeconds;
@@ -590,6 +591,411 @@ public class AnyBusTest {
                 new String[]{"8388608"},
         };
         this.callView(contract, method, types, args);
+    }
+
+    /**
+     * 移除流动性测试用例
+     */
+    @Test
+    public void callRemoveLiquidity() throws Exception {
+        String contractAddr = this.router;
+        String method = "removeLiquidity";
+        String[] types = new String[]{
+                "String",      // tokenX
+                "String",      // tokenY
+                "int",         // binStep
+                "BigInteger",  // amountXMin
+                "BigInteger",  // amountYMin
+                "int[]",       // ids
+                "BigInteger[]", // amounts
+                "String",      // to
+                "long"         // deadline
+        };
+
+        // 先查询用户在各个 bin 的 LP token 余额
+        int activeId = 8388608;
+        int[] bins = {activeId}; // 只移除 activeId 的流动性
+        BigInteger[] amounts = new BigInteger[bins.length];
+
+        System.out.println("\n========================================");
+        System.out.println("查询移除前的 LP Token 余额");
+        System.out.println("========================================");
+        for (int i = 0; i < bins.length; i++) {
+            BigInteger balance = getBalanceOf(this.pairAB, from1, bins[i]);
+            amounts[i] = balance.divide(BigInteger.valueOf(2)); // 移除一半
+            System.out.println(String.format("Bin %d: 总余额=%s, 移除数量=%s",
+                    bins[i], format18(balance), format18(amounts[i])));
+        }
+
+        // 查询移除前的代币余额
+        System.out.println("\n移除前的代币余额:");
+        BigInteger balanceXBefore = getTokenBalance(from1, tokenA);
+        BigInteger balanceYBefore = getTokenBalance(from1, tokenB);
+        System.out.println(String.format("TokenA (%s): %s", tokenA, format18(balanceXBefore)));
+        System.out.println(String.format("TokenB (%s): %s", tokenB, format18(balanceYBefore)));
+
+        // 查询移除前的 bin reserves
+        System.out.println("\n移除前的 Bin Reserves:");
+        for (int binId : bins) {
+            BigInteger[] binReserves = getBin(this.pairAB, binId);
+            System.out.println(String.format("Bin %d: ReserveX=%s, ReserveY=%s",
+                    binId, format18(binReserves[0]), format18(binReserves[1])));
+        }
+
+        long deadline = System.currentTimeMillis() / 1000 + 3600; // 1小时后
+        Object[] args = new Object[]{
+                tokenA,
+                tokenB,
+                10,  // binStep
+                BigInteger.ZERO,  // amountXMin (允许任何数量)
+                BigInteger.ZERO,  // amountYMin (允许任何数量)
+                bins,
+                amounts,
+                from1,  // to: 接收代币的地址
+                deadline
+        };
+
+        System.out.println("\n========================================");
+        System.out.println("执行移除流动性");
+        System.out.println("========================================");
+        this.call(userKey1, contractAddr, method, types, args);
+
+        // 等待交易确认后查询结果
+        System.out.println("\n等待交易确认...");
+        Thread.sleep(3000);
+
+        // 查询移除后的代币余额
+        System.out.println("\n移除后的代币余额:");
+        BigInteger balanceXAfter = getTokenBalance(from1, tokenA);
+        BigInteger balanceYAfter = getTokenBalance(from1, tokenB);
+        System.out.println(String.format("TokenA (%s): %s (变化: %s)",
+                tokenA, format18(balanceXAfter), format18(balanceXAfter.subtract(balanceXBefore))));
+        System.out.println(String.format("TokenB (%s): %s (变化: %s)",
+                tokenB, format18(balanceYAfter), format18(balanceYAfter.subtract(balanceYBefore))));
+
+        // 查询移除后的 LP token 余额
+        System.out.println("\n移除后的 LP Token 余额:");
+        for (int binId : bins) {
+            BigInteger balance = getBalanceOf(this.pairAB, from1, binId);
+            System.out.println(String.format("Bin %d: %s", binId, format18(balance)));
+        }
+
+        // 查询移除后的 bin reserves
+        System.out.println("\n移除后的 Bin Reserves:");
+        for (int binId : bins) {
+            BigInteger[] binReserves = getBin(this.pairAB, binId);
+            System.out.println(String.format("Bin %d: ReserveX=%s, ReserveY=%s",
+                    binId, format18(binReserves[0]), format18(binReserves[1])));
+        }
+
+        // 打印流动性分布
+        System.out.println("\n========================================");
+        System.out.println("当前流动性分布");
+        System.out.println("========================================");
+        printLiquidityDistribution(this.pairAB);
+    }
+
+    /**
+     * Swap 测试用例 - 精确输入交换
+     * 注意：Path 结构体在链上调用时需要展开为三个参数：pairBinSteps[], versions[], tokenPath[]
+     */
+    @Test
+    public void callSwapExactTokensForTokens() throws Exception {
+        String contractAddr = this.router;
+        String method = "swapExactTokensForTokens";
+        String[] types = new String[]{
+                "BigInteger",  // amountIn
+                "BigInteger",  // amountOutMin
+                "int[]",       // path.pairBinSteps
+                "int[]",       // path.versions (Version enum: 0=V1, 1=V2, 2=V2_1, 3=V2_2)
+                "String[]",    // path.tokenPath
+                "String",      // to
+                "long"         // deadline
+        };
+
+        // Swap: tokenA -> tokenB
+        BigInteger amountIn = TxUtils.parse18("2.1");
+        BigInteger amountOutMin = TxUtils.parse18("0.4"); // 至少 0.4 tokenB
+
+        int[] binSteps = {10};
+        int[] versions = {3}; // V2_2 = 3
+        String[] tokenPath = {tokenA, tokenB};
+
+        // 查询交换前的余额
+        System.out.println("\n========================================");
+        System.out.println("查询交换前的余额");
+        System.out.println("========================================");
+        BigInteger balanceABefore = getTokenBalance(from1, tokenA);
+        BigInteger balanceBBefore = getTokenBalance(from1, tokenB);
+        System.out.println(String.format("TokenA (%s): %s", tokenA, format18(balanceABefore)));
+        System.out.println(String.format("TokenB (%s): %s", tokenB, format18(balanceBBefore)));
+
+        // 查询交换前的 bin reserves 和 activeId
+        int activeId = getActiveId(this.pairAB);
+        System.out.println(String.format("\nActive ID: %d", activeId));
+        System.out.println("交换前的 Bin Reserves:");
+        BigInteger[] binReservesBefore = getBin(this.pairAB, activeId);
+        System.out.println(String.format("Bin %d: ReserveX=%s, ReserveY=%s",
+                activeId, format18(binReservesBefore[0]), format18(binReservesBefore[1])));
+
+        long deadline = System.currentTimeMillis() / 1000 + 3600; // 1小时后
+        Object[] args = new Object[]{
+                amountIn,
+                amountOutMin,
+                binSteps,
+                versions,
+                tokenPath,
+                from1,  // to: 接收代币的地址
+                deadline
+        };
+
+        // 准备 msgValue: 需要将 tokenA 转入 router
+        Map<String, BigInteger> msgValue = new HashMap<>();
+        msgValue.put(tokenA, amountIn);
+
+        System.out.println("\n========================================");
+        System.out.println("执行 Swap");
+        System.out.println("========================================");
+        System.out.println(String.format("输入: %s TokenA", format18(amountIn)));
+        System.out.println(String.format("最小输出: %s TokenB", format18(amountOutMin)));
+        this.call(userKey1, contractAddr, method, types, args, msgValue);
+
+        // 等待交易确认后查询结果
+        System.out.println("\n等待交易确认...");
+        Thread.sleep(3000);
+
+        // 查询交换后的余额
+        System.out.println("\n交换后的代币余额:");
+        BigInteger balanceAAfter = getTokenBalance(from1, tokenA);
+        BigInteger balanceBAfter = getTokenBalance(from1, tokenB);
+        System.out.println(String.format("TokenA (%s): %s (变化: %s)",
+                tokenA, format18(balanceAAfter), format18(balanceAAfter.subtract(balanceABefore))));
+        System.out.println(String.format("TokenB (%s): %s (变化: %s)",
+                tokenB, format18(balanceBAfter), format18(balanceBAfter.subtract(balanceBBefore))));
+
+        // 计算实际交换率
+        BigInteger actualAmountIn = balanceABefore.subtract(balanceAAfter);
+        BigInteger actualAmountOut = balanceBAfter.subtract(balanceBBefore);
+        if (actualAmountOut.compareTo(BigInteger.ZERO) > 0 && actualAmountIn.compareTo(BigInteger.ZERO) > 0) {
+            BigDecimal price = new BigDecimal(actualAmountOut)
+                    .divide(new BigDecimal(actualAmountIn), 18, RoundingMode.HALF_UP);
+            System.out.println(String.format("\n实际交换率: 1 TokenA = %s TokenB", price.toPlainString()));
+        }
+
+        // 查询交换后的 bin reserves
+        System.out.println("\n交换后的 Bin Reserves:");
+        BigInteger[] binReservesAfter = getBin(this.pairAB, activeId);
+        System.out.println(String.format("Bin %d: ReserveX=%s, ReserveY=%s",
+                activeId, format18(binReservesAfter[0]), format18(binReservesAfter[1])));
+        System.out.println(String.format("ReserveX 变化: %s",
+                format18(binReservesAfter[0].subtract(binReservesBefore[0]))));
+        System.out.println(String.format("ReserveY 变化: %s",
+                format18(binReservesAfter[1].subtract(binReservesBefore[1]))));
+
+        // 打印流动性分布
+        System.out.println("\n========================================");
+        System.out.println("当前流动性分布");
+        System.out.println("========================================");
+        printLiquidityDistribution(this.pairAB);
+    }
+
+    /**
+     * 查询用户的 LP Token 余额
+     */
+    private BigInteger getBalanceOf(String pair, String account, int binId) throws Exception {
+        String method = "balanceOf";
+        String[] types = new String[]{"String", "BigInteger"};
+        Object[] args = new Object[]{account, BigInteger.valueOf(binId)};
+        RpcResult rpcResult = this.callViewSilent(pair, method, types, args);
+        if (rpcResult.getResult() != null) {
+            return new BigInteger(rpcResult.getResult().toString());
+        } else {
+            throw new RuntimeException(rpcResult.getError().toString());
+        }
+    }
+
+    /**
+     * 查询用户的代币余额
+     */
+    private BigInteger getTokenBalance(String account, String token) throws Exception {
+        String[] split = token.split("-");
+        int chainId = Integer.parseInt(split[0]);
+        int assetId = Integer.parseInt(split[1]);
+        Result result = NerveSDKTool.getAccountBalance(account, chainId, assetId);
+        if (!result.isSuccess()) {
+            throw new RuntimeException(result.toString());
+        }
+        Map data = (Map) result.getData();
+        return new BigInteger(data.get("available").toString());
+    }
+
+    /**
+     * 格式化显示（除以 1e18）
+     */
+    private String format18(BigInteger value) {
+        if (value == null || value.compareTo(BigInteger.ZERO) == 0) {
+            return "0";
+        }
+        BigDecimal decimal = new BigDecimal(value)
+                .divide(new BigDecimal("1000000000000000000"), 6, RoundingMode.HALF_UP);
+        return decimal.toPlainString();
+    }
+
+    /**
+     * 查询并验证移除流动性后的状态
+     */
+    @Test
+    public void verifyRemoveLiquidityState() throws Exception {
+        String pair = this.pairAB;
+        String account = from1;
+        int activeId = 8388608;
+
+        System.out.println("\n========================================");
+        System.out.println("验证移除流动性后的状态");
+        System.out.println("========================================");
+
+        // 1. 查询 LP Token 余额
+        System.out.println("\n1. LP Token 余额:");
+        for (int binId : new int[]{activeId - 1, activeId, activeId + 1}) {
+            BigInteger balance = getBalanceOf(pair, account, binId);
+            System.out.println(String.format("  Bin %d: %s", binId, format18(balance)));
+        }
+
+        // 2. 查询代币余额
+        System.out.println("\n2. 代币余额:");
+        BigInteger balanceA = getTokenBalance(account, tokenA);
+        BigInteger balanceB = getTokenBalance(account, tokenB);
+        System.out.println(String.format("  TokenA: %s", format18(balanceA)));
+        System.out.println(String.format("  TokenB: %s", format18(balanceB)));
+
+        // 3. 查询 Bin Reserves
+        System.out.println("\n3. Bin Reserves:");
+        for (int binId : new int[]{activeId - 1, activeId, activeId + 1}) {
+            BigInteger[] reserves = getBin(pair, binId);
+            BigInteger supply = totalSupply(pair, binId);
+            System.out.println(String.format("  Bin %d: ReserveX=%s, ReserveY=%s, Supply=%s",
+                    binId, format18(reserves[0]), format18(reserves[1]), format18(supply)));
+        }
+
+        // 4. 打印流动性分布
+        printLiquidityDistribution(pair);
+    }
+
+    /**
+     * 查询并验证 Swap 后的状态
+     */
+    @Test
+    public void verifySwapState() throws Exception {
+        String pair = this.pairAB;
+        String account = from1;
+
+        System.out.println("\n========================================");
+        System.out.println("验证 Swap 后的状态");
+        System.out.println("========================================");
+
+        // 1. 查询代币余额
+        System.out.println("\n1. 代币余额:");
+        BigInteger balanceA = getTokenBalance(account, tokenA);
+        BigInteger balanceB = getTokenBalance(account, tokenB);
+        System.out.println(String.format("  TokenA: %s", format18(balanceA)));
+        System.out.println(String.format("  TokenB: %s", format18(balanceB)));
+
+        // 2. 查询 Active Bin 状态
+        int activeId = getActiveId(pair);
+        System.out.println(String.format("\n2. Active Bin (ID: %d):", activeId));
+        BigInteger[] reserves = getBin(pair, activeId);
+        BigInteger price = getPriceFromId(pair, activeId);
+        System.out.println(String.format("  ReserveX: %s", format18(reserves[0])));
+        System.out.println(String.format("  ReserveY: %s", format18(reserves[1])));
+        System.out.println(String.format("  Price: %s", format18(price)));
+
+        // 3. 计算价格比率
+        if (reserves[0].compareTo(BigInteger.ZERO) > 0 && reserves[1].compareTo(BigInteger.ZERO) > 0) {
+            BigDecimal priceRatio = new BigDecimal(reserves[1])
+                    .divide(new BigDecimal(reserves[0]), 18, RoundingMode.HALF_UP);
+            System.out.println(String.format("  Price Ratio (Y/X): %s", priceRatio.toPlainString()));
+        }
+
+        // 4. 打印流动性分布
+        printLiquidityDistribution(pair);
+    }
+
+    /**
+     * 查询交易对的总体状态
+     */
+    @Test
+    public void queryPairState() throws Exception {
+        String pair = this.pairAB;
+
+        System.out.println("\n========================================");
+        System.out.println("交易对总体状态查询");
+        System.out.println("========================================");
+
+        // 基本信息
+        String tokenX = getTokenX(pair);
+        String tokenY = getTokenY(pair);
+        int activeId = getActiveId(pair);
+        int binStep = getBinStep(pair);
+
+        System.out.println(String.format("交易对地址: %s", pair));
+        System.out.println(String.format("TokenX: %s", tokenX));
+        System.out.println(String.format("TokenY: %s", tokenY));
+        System.out.println(String.format("Bin Step: %d", binStep));
+        System.out.println(String.format("Active ID: %d", activeId));
+
+        // 查询总储备量
+        BigInteger totalReserveX = BigInteger.ZERO;
+        BigInteger totalReserveY = BigInteger.ZERO;
+
+        // 遍历所有有流动性的 bin
+        java.util.Set<Integer> allBins = new java.util.HashSet<>();
+        allBins.add(activeId);
+
+        int currentId = activeId;
+        int maxIterations = 100;
+        int iterations = 0;
+        while (iterations < maxIterations) {
+            int nextId = getNextNonEmptyBin(pair, true, currentId);
+            if (nextId == 0 || nextId == 0xFFFFFF || nextId == currentId) {
+                break;
+            }
+            allBins.add(nextId);
+            currentId = nextId;
+            iterations++;
+        }
+
+        currentId = activeId;
+        iterations = 0;
+        while (iterations < maxIterations) {
+            int nextId = getNextNonEmptyBin(pair, false, currentId);
+            if (nextId == 0 || nextId == 0xFFFFFF || nextId == currentId) {
+                break;
+            }
+            allBins.add(nextId);
+            currentId = nextId;
+            iterations++;
+        }
+
+        for (int binId : allBins) {
+            BigInteger[] binReserves = getBin(pair, binId);
+            totalReserveX = totalReserveX.add(binReserves[0]);
+            totalReserveY = totalReserveY.add(binReserves[1]);
+        }
+
+        System.out.println(String.format("\n总储备量:"));
+        System.out.println(String.format("  Total ReserveX: %s", format18(totalReserveX)));
+        System.out.println(String.format("  Total ReserveY: %s", format18(totalReserveY)));
+
+        if (totalReserveX.compareTo(BigInteger.ZERO) > 0 && totalReserveY.compareTo(BigInteger.ZERO) > 0) {
+            BigDecimal totalPriceRatio = new BigDecimal(totalReserveY)
+                    .divide(new BigDecimal(totalReserveX), 18, RoundingMode.HALF_UP);
+            System.out.println(String.format("  总价格比率 (Y/X): %s", totalPriceRatio.toPlainString()));
+        }
+
+        System.out.println(String.format("\n有流动性的 Bin 数量: %d", allBins.size()));
+
+        // 打印详细流动性分布
+        printLiquidityDistribution(pair);
     }
 
     private RpcResult callView(String contract, String method, String[] types, Object args) throws Exception {
