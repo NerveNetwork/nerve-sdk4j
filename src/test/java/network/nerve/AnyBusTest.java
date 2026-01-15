@@ -697,7 +697,6 @@ public class AnyBusTest {
 
     /**
      * Swap 测试用例 - 精确输入交换
-     * 注意：Path 结构体在链上调用时需要展开为三个参数：pairBinSteps[], versions[], tokenPath[]
      */
     @Test
     public void callSwapExactTokensForTokens() throws Exception {
@@ -707,7 +706,6 @@ public class AnyBusTest {
                 "BigInteger",  // amountIn
                 "BigInteger",  // amountOutMin
                 "int[]",       // path.pairBinSteps
-                "int[]",       // path.versions (Version enum: 0=V1, 1=V2, 2=V2_1, 3=V2_2)
                 "String[]",    // path.tokenPath
                 "String",      // to
                 "long"         // deadline
@@ -718,7 +716,6 @@ public class AnyBusTest {
         BigInteger amountOutMin = TxUtils.parse18("0.4"); // 至少 0.4 tokenB
 
         int[] binSteps = {10};
-        int[] versions = {3}; // V2_2 = 3
         String[] tokenPath = {tokenA, tokenB};
 
         // 查询交换前的余额
@@ -743,7 +740,6 @@ public class AnyBusTest {
                 amountIn,
                 amountOutMin,
                 binSteps,
-                versions,
                 tokenPath,
                 from1,  // to: 接收代币的地址
                 deadline
@@ -776,6 +772,127 @@ public class AnyBusTest {
         // 计算实际交换率
         BigInteger actualAmountIn = balanceABefore.subtract(balanceAAfter);
         BigInteger actualAmountOut = balanceBAfter.subtract(balanceBBefore);
+        if (actualAmountOut.compareTo(BigInteger.ZERO) > 0 && actualAmountIn.compareTo(BigInteger.ZERO) > 0) {
+            BigDecimal price = new BigDecimal(actualAmountOut)
+                    .divide(new BigDecimal(actualAmountIn), 18, RoundingMode.HALF_UP);
+            System.out.println(String.format("\n实际交换率: 1 TokenA = %s TokenB", price.toPlainString()));
+        }
+
+        // 查询交换后的 bin reserves
+        System.out.println("\n交换后的 Bin Reserves:");
+        BigInteger[] binReservesAfter = getBin(this.pairAB, activeId);
+        System.out.println(String.format("Bin %d: ReserveX=%s, ReserveY=%s",
+                activeId, format18(binReservesAfter[0]), format18(binReservesAfter[1])));
+        System.out.println(String.format("ReserveX 变化: %s",
+                format18(binReservesAfter[0].subtract(binReservesBefore[0]))));
+        System.out.println(String.format("ReserveY 变化: %s",
+                format18(binReservesAfter[1].subtract(binReservesBefore[1]))));
+
+        // 打印流动性分布
+        System.out.println("\n========================================");
+        System.out.println("当前流动性分布");
+        System.out.println("========================================");
+        printLiquidityDistribution(this.pairAB);
+    }
+
+    /**
+     * Swap 测试用例 - 精确输出交换
+     * 指定要获得的输出数量，计算需要的输入数量
+     */
+    @Test
+    public void callSwapTokensForExactTokens() throws Exception {
+        String contractAddr = this.router;
+        String method = "swapTokensForExactTokens";
+        String[] types = new String[]{
+                "BigInteger",  // amountOut
+                "BigInteger",  // amountInMax
+                "int[]",       // path.pairBinSteps
+                "String[]",    // path.tokenPath
+                "String",      // to
+                "long"         // deadline
+        };
+
+        // Swap: tokenA -> tokenB
+        // 想要获得 0.5 tokenB，最多愿意支付 3.0 tokenA
+        BigInteger amountOut = TxUtils.parse18("0.5");
+        BigInteger amountInMax = TxUtils.parse18("3.0");
+
+        int[] binSteps = {10};
+        String[] tokenPath = {tokenA, tokenB};
+
+        // 查询交换前的余额
+        System.out.println("\n========================================");
+        System.out.println("查询交换前的余额");
+        System.out.println("========================================");
+        BigInteger balanceABefore = getTokenBalance(from1, tokenA);
+        BigInteger balanceBBefore = getTokenBalance(from1, tokenB);
+        System.out.println(String.format("TokenA (%s): %s", tokenA, format18(balanceABefore)));
+        System.out.println(String.format("TokenB (%s): %s", tokenB, format18(balanceBBefore)));
+
+        // 查询交换前的 bin reserves 和 activeId
+        int activeId = getActiveId(this.pairAB);
+        System.out.println(String.format("\nActive ID: %d", activeId));
+        System.out.println("交换前的 Bin Reserves:");
+        BigInteger[] binReservesBefore = getBin(this.pairAB, activeId);
+        System.out.println(String.format("Bin %d: ReserveX=%s, ReserveY=%s",
+                activeId, format18(binReservesBefore[0]), format18(binReservesBefore[1])));
+
+        long deadline = System.currentTimeMillis() / 1000 + 3600; // 1小时后
+        Object[] args = new Object[]{
+                amountOut,
+                amountInMax,
+                binSteps,
+                tokenPath,
+                from1,  // to: 接收代币的地址
+                deadline
+        };
+
+        // 注意：swapTokensForExactTokens 需要先计算需要的输入数量
+        // 但实际执行时，我们需要先估算一个输入数量并转入 router
+        // 这里使用 amountInMax 作为初始估算值
+        Map<String, BigInteger> msgValue = new HashMap<>();
+        msgValue.put(tokenA, amountInMax);
+
+        System.out.println("\n========================================");
+        System.out.println("执行 Swap (精确输出)");
+        System.out.println("========================================");
+        System.out.println(String.format("期望输出: %s TokenB", format18(amountOut)));
+        System.out.println(String.format("最大输入: %s TokenA", format18(amountInMax)));
+        this.call(userKey1, contractAddr, method, types, args, msgValue);
+
+        // 等待交易确认后查询结果
+        System.out.println("\n等待交易确认...");
+        Thread.sleep(3000);
+
+        // 查询交换后的余额
+        System.out.println("\n交换后的代币余额:");
+        BigInteger balanceAAfter = getTokenBalance(from1, tokenA);
+        BigInteger balanceBAfter = getTokenBalance(from1, tokenB);
+        System.out.println(String.format("TokenA (%s): %s (变化: %s)",
+                tokenA, format18(balanceAAfter), format18(balanceAAfter.subtract(balanceABefore))));
+        System.out.println(String.format("TokenB (%s): %s (变化: %s)",
+                tokenB, format18(balanceBAfter), format18(balanceBAfter.subtract(balanceBBefore))));
+
+        // 验证实际输出是否达到期望值
+        BigInteger actualAmountOut = balanceBAfter.subtract(balanceBBefore);
+        System.out.println(String.format("\n期望输出: %s TokenB", format18(amountOut)));
+        System.out.println(String.format("实际输出: %s TokenB", format18(actualAmountOut)));
+        if (actualAmountOut.compareTo(amountOut) >= 0) {
+            System.out.println("✅ 实际输出达到或超过期望值");
+        } else {
+            System.out.println("⚠️ 实际输出低于期望值");
+        }
+
+        // 计算实际输入和交换率
+        BigInteger actualAmountIn = balanceABefore.subtract(balanceAAfter);
+        System.out.println(String.format("实际输入: %s TokenA", format18(actualAmountIn)));
+        System.out.println(String.format("最大允许输入: %s TokenA", format18(amountInMax)));
+        if (actualAmountIn.compareTo(amountInMax) <= 0) {
+            System.out.println("✅ 实际输入在允许范围内");
+        } else {
+            System.out.println("⚠️ 实际输入超过最大允许值");
+        }
+
         if (actualAmountOut.compareTo(BigInteger.ZERO) > 0 && actualAmountIn.compareTo(BigInteger.ZERO) > 0) {
             BigDecimal price = new BigDecimal(actualAmountOut)
                     .divide(new BigDecimal(actualAmountIn), 18, RoundingMode.HALF_UP);
