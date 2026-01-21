@@ -68,8 +68,8 @@ public class AnyBusTest {
     String userKey1;
     String from;
     String from1;
-    String router = "TNVTdTSPZDjziAMTehLos5ypUiVxgbmWBX893";
-    String factory = "TNVTdTSPbEECns5AFn8mvsWtNWYjJ28kCi1Wk";
+    String router = "TNVTdTSPgjj8MYZrYdqT5XFYJLcNweHJgB7Sw";
+    String factory = "TNVTdTSPdUGdByCQFRM7Yjfv97VegaVfA3zEE";
     String token1155 = "TNVTdTSPkNQwwSd3UYZDpDYudLQLL2DwK5AAC";
 
     // 测试代币
@@ -165,17 +165,23 @@ public class AnyBusTest {
         this.call(userKey, contractAddr, method, types, args);
     }
 
+    /**
+     * add tokenB and tokenC
+     */
     @Test
     public void callAddQuoteAsset() throws Exception {
         String contractAddr = this.factory;
         String method = "addQuoteAsset";
         String[] types = new String[]{"String"};
         Object[] args = new Object[]{
-                tokenC
+                tokenB
         };
         this.call(userKey, contractAddr, method, types, args);
     }
 
+    /**
+     * add pair: A/B and B/C
+     */
     @Test
     public void callCreateLBPair() throws Exception {
         int activeId = 8388608; // 中间价格点
@@ -236,11 +242,10 @@ public class AnyBusTest {
         // 准备流动性参数
         int activeId = 8388608;
 
-        BigInteger amountX = TxUtils.parse18("1000");
-        BigInteger amountY = TxUtils.parse18("20");
-
         // 分布
-        /*int[] deltaIds = {-2, -1, 0, 1, 2}; // 在 activeId 附近的5个 bins
+        BigInteger amountX = TxUtils.parse18("1000");
+        BigInteger amountY = TxUtils.parse18("1000");
+        int[] deltaIds = {-2, -1, 0, 1, 2}; // 在 activeId 附近的5个 bins
         BigInteger[] distributionX = new BigInteger[]{
                 BigInteger.ZERO,
                 BigInteger.ZERO,
@@ -254,14 +259,18 @@ public class AnyBusTest {
                 new BigDecimal("0.4").movePointRight(18).toBigInteger(),
                 BigInteger.ZERO,
                 BigInteger.ZERO
-        };*/
-        int[] deltaIds = {0}; // 在 activeId
-        BigInteger[] distributionX = new BigInteger[]{
-                new BigDecimal("1").movePointRight(18).toBigInteger()
         };
-        BigInteger[] distributionY = new BigInteger[]{
-                new BigDecimal("1").movePointRight(18).toBigInteger()
-        };
+
+        //BigInteger amountX = TxUtils.parse18("100");
+        //BigInteger amountY = TxUtils.parse18("10");
+        //int[] deltaIds = {0}; // 在 activeId
+        //BigInteger[] distributionX = new BigInteger[]{
+        //        new BigDecimal("1").movePointRight(18).toBigInteger()
+        //};
+        //BigInteger[] distributionY = new BigInteger[]{
+        //        new BigDecimal("1").movePointRight(18).toBigInteger()
+        //};
+
         long deadline = System.currentTimeMillis()/1000 + 3600; // 1小时后
         Object[] args = new Object[]{
                 tokenA,
@@ -284,6 +293,7 @@ public class AnyBusTest {
         msgValue.put(tokenA, amountX);
         msgValue.put(tokenB, amountY);
         this.call(userKey1, contractAddr, method, types, args, msgValue);
+        printLiquidityDistribution(pairAB);
     }
 
     @Test
@@ -298,9 +308,32 @@ public class AnyBusTest {
     }
 
     @Test
+    public void decodeTest() throws Exception {
+        String hex = "00000000000000008ac7230489e8000000000000000000056bc75ddafd2f5304";
+        System.out.println(Arrays.toString(decode(HexUtil.decode(hex))));
+    }
+
+    @Test
     public void getLiquidityDistribution() throws Exception {
         String pair = this.pairAB;
         printLiquidityDistribution(pair);
+    }
+
+    public static BigInteger[] decode(byte[] data) {
+        if (data == null || data.length != 32) {
+            return new BigInteger[]{BigInteger.ZERO, BigInteger.ZERO};
+        }
+
+        // First 16 bytes = Y (high 128 bits), last 16 bytes = X (low 128 bits)
+        byte[] yBytes = new byte[16];
+        byte[] xBytes = new byte[16];
+        System.arraycopy(data, 0, yBytes, 0, 16);   // Y in high 128 bits
+        System.arraycopy(data, 16, xBytes, 0, 16);  // X in low 128 bits
+
+        return new BigInteger[]{
+                new BigInteger(1, xBytes),  // X (low 128 bits)
+                new BigInteger(1, yBytes)   // Y (high 128 bits)
+        };
     }
 
     /**
