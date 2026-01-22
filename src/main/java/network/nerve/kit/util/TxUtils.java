@@ -195,6 +195,17 @@ public class TxUtils {
         return AddressTool.getAddress(Sha256Hash.hash(all), chainId, addressType);
     }
 
+    public static NerveToken parseTokenStr(String str) {
+        if (StringUtils.isBlank(str)) {
+            return null;
+        }
+        String s[] = str.split("-");
+        if (s.length != 2) {
+            return null;
+        }
+        return new NerveToken(Integer.parseInt(s[0].trim()), Integer.parseInt(s[1].trim()));
+    }
+
     public static NerveToken[] tokenSort(NerveToken token0, NerveToken token1) {
         if (token0 == null || token1 == null) {
             throw new NulsRuntimeException(CommonCodeConstanst.NULL_PARAMETER);

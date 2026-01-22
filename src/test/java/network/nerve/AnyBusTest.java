@@ -23,6 +23,7 @@
  */
 package network.nerve;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import network.nerve.anybus.*;
 import network.nerve.base.basic.AddressTool;
 import network.nerve.base.data.CoinData;
@@ -37,7 +38,11 @@ import network.nerve.core.model.StringUtils;
 import network.nerve.core.parse.JSONUtils;
 import network.nerve.kit.error.AccountErrorCode;
 import network.nerve.kit.model.Account;
+import network.nerve.kit.model.NerveToken;
+import network.nerve.kit.model.dto.CoinFromDto;
+import network.nerve.kit.model.dto.CoinToDto;
 import network.nerve.kit.model.dto.RpcResult;
+import network.nerve.kit.model.dto.TransferDto;
 import network.nerve.kit.util.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +53,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static network.nerve.core.rpc.util.NulsDateUtils.getCurrentTimeSeconds;
 import static network.nerve.kit.constant.Constant.PUBLIC_SERVER_URL;
@@ -68,8 +75,8 @@ public class AnyBusTest {
     String userKey1;
     String from;
     String from1;
-    String router = "TNVTdTSPgjj8MYZrYdqT5XFYJLcNweHJgB7Sw";
-    String factory = "TNVTdTSPdUGdByCQFRM7Yjfv97VegaVfA3zEE";
+    String router = "TNVTdTSPX4VbtMCX3ih6YdKWrS3pTBuCYpVcE";
+    String factory = "TNVTdTSPcRcqMzKCUqAe4vpCSYMUGTyb7T6By";
     String token1155 = "TNVTdTSPkNQwwSd3UYZDpDYudLQLL2DwK5AAC";
 
     // 测试代币
@@ -94,6 +101,28 @@ public class AnyBusTest {
             System.out.println("init done.");
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void accountBalancePrint() throws Exception {
+        List<String> list = new ArrayList<>();
+        //list.add("TNVTdTSPRnXkDiagy7enti1KL75NU5AxC9sQA");
+        list.addAll(pMap.keySet());
+
+        List<String> tokens = new ArrayList<>();
+        tokens.add("5-1");
+        tokens.add(tokenA);
+        tokens.add(tokenB);
+        tokens.add(tokenC);
+
+        System.out.println("-------------------------------------------");
+        for (String acc : list) {
+            System.out.println(String.format("account: %s", acc));
+            for (String token : tokens) {
+                System.out.println(String.format("\ttoken: %s, balance: %s", token, getTokenBalance(acc, token)));
+            }
+            System.out.println("-------------------------------------------");
         }
     }
 
@@ -174,7 +203,8 @@ public class AnyBusTest {
         String method = "addQuoteAsset";
         String[] types = new String[]{"String"};
         Object[] args = new Object[]{
-                tokenB
+                //tokenB
+                tokenC
         };
         this.call(userKey, contractAddr, method, types, args);
     }
@@ -189,6 +219,7 @@ public class AnyBusTest {
         String method = "createLBPair";
         String[] types = new String[]{"String", "String", "int", "int"};
         Object[] args = new Object[]{
+                //tokenA, tokenB, activeId, 10
                 tokenB, tokenC, activeId, 10
         };
         this.call(userKey, contractAddr, method, types, args);
@@ -243,8 +274,8 @@ public class AnyBusTest {
         int activeId = 8388608;
 
         // 分布
-        BigInteger amountX = TxUtils.parse18("1000");
-        BigInteger amountY = TxUtils.parse18("1000");
+        BigInteger amountX = TxUtils.parse18("100");
+        BigInteger amountY = TxUtils.parse18("100");
         int[] deltaIds = {-2, -1, 0, 1, 2}; // 在 activeId 附近的5个 bins
         BigInteger[] distributionX = new BigInteger[]{
                 BigInteger.ZERO,
@@ -293,6 +324,7 @@ public class AnyBusTest {
         msgValue.put(tokenA, amountX);
         msgValue.put(tokenB, amountY);
         this.call(userKey1, contractAddr, method, types, args, msgValue);
+        TimeUnit.SECONDS.sleep(7);
         printLiquidityDistribution(pairAB);
     }
 
@@ -395,10 +427,10 @@ public class AnyBusTest {
         BigInteger totalSupply = BigInteger.ZERO;
 
         // 打印表头
-        System.out.println(String.format("%-10s %-30s %-30s %-30s %-20s",
+        System.out.println(String.format("%-10s %-35s %-35s %-50s %-20s",
                 "Bin ID", "ReserveX", "ReserveY", "Total Supply", "Price"));
         System.out.println("------------------------------------------------------------------------" +
-                "------------------------------------------------------------------------");
+                "------------------------------------------------------------------------------------------------------");
 
         // 打印每个 bin 的信息
         for (int binId : sortedBins) {
@@ -408,16 +440,16 @@ public class AnyBusTest {
 
             // 格式化显示（除以 1e18）
             java.math.BigDecimal reserveXDecimal = new java.math.BigDecimal(binReserves[0])
-                    .divide(new java.math.BigDecimal("1000000000000000000"), 6, java.math.RoundingMode.HALF_UP);
+                    .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
             java.math.BigDecimal reserveYDecimal = new java.math.BigDecimal(binReserves[1])
-                    .divide(new java.math.BigDecimal("1000000000000000000"), 6, java.math.RoundingMode.HALF_UP);
+                    .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
             java.math.BigDecimal supplyDecimal = new java.math.BigDecimal(binSupply)
-                    .divide(new java.math.BigDecimal("1000000000000000000"), 6, java.math.RoundingMode.HALF_UP);
+                    .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
             java.math.BigDecimal priceDecimal = new java.math.BigDecimal(price)
-                    .divide(new java.math.BigDecimal("1000000000000000000"), 6, java.math.RoundingMode.HALF_UP);
+                    .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
 
             String marker = (binId == activeId) ? " <-- Active" : "";
-            System.out.println(String.format("%-10d %-30s %-30s %-30s %-20s%s",
+            System.out.println(String.format("%-10d %-35s %-35s %-50s %-20s%s",
                     binId,
                     reserveXDecimal.toPlainString(),
                     reserveYDecimal.toPlainString(),
@@ -432,15 +464,15 @@ public class AnyBusTest {
 
         // 打印汇总信息
         System.out.println("------------------------------------------------------------------------" +
-                "------------------------------------------------------------------------");
+                "------------------------------------------------------------------------------------------------------");
         java.math.BigDecimal totalReserveXDecimal = new java.math.BigDecimal(totalReserveX)
-                .divide(new java.math.BigDecimal("1000000000000000000"), 6, java.math.RoundingMode.HALF_UP);
+                .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
         java.math.BigDecimal totalReserveYDecimal = new java.math.BigDecimal(totalReserveY)
-                .divide(new java.math.BigDecimal("1000000000000000000"), 6, java.math.RoundingMode.HALF_UP);
+                .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
         java.math.BigDecimal totalSupplyDecimal = new java.math.BigDecimal(totalSupply)
-                .divide(new java.math.BigDecimal("1000000000000000000"), 6, java.math.RoundingMode.HALF_UP);
+                .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
 
-        System.out.println(String.format("%-10s %-30s %-30s %-30s",
+        System.out.println(String.format("%-10s %-35s %-35s %-50s",
                 "总计",
                 totalReserveXDecimal.toPlainString(),
                 totalReserveYDecimal.toPlainString(),
@@ -791,7 +823,7 @@ public class AnyBusTest {
 
         // 等待交易确认后查询结果
         System.out.println("\n等待交易确认...");
-        Thread.sleep(3000);
+        Thread.sleep(7000);
 
         // 查询交换后的余额
         System.out.println("\n交换后的代币余额:");
@@ -895,7 +927,7 @@ public class AnyBusTest {
 
         // 等待交易确认后查询结果
         System.out.println("\n等待交易确认...");
-        Thread.sleep(3000);
+        Thread.sleep(7000);
 
         // 查询交换后的余额
         System.out.println("\n交换后的代币余额:");
@@ -947,6 +979,807 @@ public class AnyBusTest {
         System.out.println("当前流动性分布");
         System.out.println("========================================");
         printLiquidityDistribution(this.pairAB);
+    }
+
+    @Test
+    public void testCreateTransferTx() throws JsonProcessingException {
+        String fromAddress = "TNVTdTSPJJMGh7ijUGDqVZyucbeN1z4jqb1ad";
+        String token = tokenC;
+        int decimals = 8;
+
+        BigInteger fee = BigInteger.ZERO;
+
+        TransferDto transferDto = new TransferDto();
+
+        List<CoinFromDto> inputs = new ArrayList<>();
+
+        List<CoinToDto> outputs = new ArrayList<>();
+        Set<String> set = new HashSet<>(pMap.keySet());
+        set.remove(fromAddress);
+        NerveToken nerveToken = TxUtils.parseTokenStr(token);
+
+        BigInteger total = BigInteger.ZERO;
+        for (String toAddr : set) {
+            CoinToDto to = new CoinToDto();
+            to.setAddress(toAddr);
+            to.setAmount(new BigDecimal("101010").movePointRight(decimals).toBigInteger());
+            to.setAssetChainId(nerveToken.getChainId());
+            to.setAssetId(nerveToken.getAssetId());
+            to.setLockTime(0);
+            outputs.add(to);
+            total = total.add(to.getAmount());
+        }
+        CoinFromDto from = new CoinFromDto();
+        from.setAddress(fromAddress);
+        from.setAmount(total);
+        from.setAssetChainId(nerveToken.getChainId());
+        from.setAssetId(nerveToken.getAssetId());
+        from.setNonce(this.getBalanceAndNonce(fromAddress, nerveToken.getChainId(), nerveToken.getAssetId()));
+        inputs.add(from);
+
+        transferDto.setInputs(inputs);
+        transferDto.setOutputs(outputs);
+
+        Result<Map> result = NerveSDKTool.createTransferTxOffline(transferDto);
+        String txHex = (String) result.getData().get("txHex");
+        System.out.println(txHex);
+
+        //签名
+        String prikey = pMap.get(fromAddress).toString();
+        result = NerveSDKTool.sign(txHex, fromAddress, prikey);
+        txHex = (String) result.getData().get("txHex");
+
+        String txHash = (String) result.getData().get("hash");
+        //广播
+        result = NerveSDKTool.broadcast(txHex);
+        System.out.println(JSONUtils.obj2PrettyJson(result));
+    }
+
+    /**
+     * 多个账户同时发起兑换交易的测试
+     * 模拟多个用户同时进行 swap 操作
+     */
+    @Test
+    public void concurrentSwapTransactions() throws Exception {
+        // 准备多个账户（从 env.json 中读取）
+        List<String> userKeys = new ArrayList<>();
+        List<String> addresses = new ArrayList<>();
+
+        // 添加已有的账户
+        userKeys.add(userKey);
+        addresses.add(from);
+        userKeys.add(userKey1);
+        addresses.add(from1);
+
+        // 尝试从 env.json 读取更多账户（如果有的话）
+        for (Object key : pMap.keySet()) {
+            String addr = key.toString();
+            if (!addresses.contains(addr) && pMap.get(addr) != null) {
+                userKeys.add(pMap.get(addr).toString());
+                addresses.add(addr);
+                if (addresses.size() >= 5) break; // 最多5个账户
+            }
+        }
+
+        System.out.println("\n========================================");
+        System.out.println("多账户并发兑换交易测试");
+        System.out.println("========================================");
+        System.out.println(String.format("参与账户数量: %d", addresses.size()));
+
+        // 查询初始状态
+        int activeId = getActiveId(this.pairAB);
+        System.out.println(String.format("\nActive ID: %d", activeId));
+        BigInteger[] binReservesBefore = getBin(this.pairAB, activeId);
+        System.out.println(String.format("初始 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesBefore[0]), format18(binReservesBefore[1])));
+
+        // 记录每个账户的初始余额
+        Map<String, BigInteger> initialBalancesA = new HashMap<>();
+        Map<String, BigInteger> initialBalancesB = new HashMap<>();
+        for (String addr : addresses) {
+            initialBalancesA.put(addr, getTokenBalance(addr, tokenA));
+            initialBalancesB.put(addr, getTokenBalance(addr, tokenB));
+        }
+
+        // 并发执行兑换交易
+        List<Thread> threads = new ArrayList<>();
+        List<Exception> exceptions = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(addresses.size());
+
+        for (int i = 0; i < addresses.size(); i++) {
+            final int index = i;
+            final String userKey = userKeys.get(i);
+            final String address = addresses.get(i);
+
+            Thread thread = new Thread(() -> {
+                try {
+                    // 每个账户兑换不同数量的代币
+                    BigInteger amountIn = TxUtils.parse18(String.valueOf(1.0 + index * 0.5)); // 1.0, 1.5, 2.0, ...
+                    BigInteger amountOutMin = TxUtils.parse18("0.1");
+
+                    String contractAddr = this.router;
+                    String method = "swapExactTokensForTokens";
+                    String[] types = new String[]{
+                            "BigInteger", "BigInteger", "int[]", "String[]", "String", "long"
+                    };
+
+                    int[] binSteps = {10};
+                    String[] tokenPath = {tokenA, tokenB};
+                    long deadline = System.currentTimeMillis() / 1000 + 3600;
+
+                    Object[] args = new Object[]{
+                            amountIn, amountOutMin, binSteps, tokenPath, address, deadline
+                    };
+
+                    Map<String, BigInteger> msgValue = new HashMap<>();
+                    msgValue.put(tokenA, amountIn);
+
+                    System.out.println(String.format("\n[账户 %d] 开始兑换: %s TokenA", index + 1, format18(amountIn)));
+                    this.call(userKey, contractAddr, method, types, args, msgValue);
+                    System.out.println(String.format("[账户 %d] 兑换交易已提交", index + 1));
+
+                } catch (Exception e) {
+                    System.err.println(String.format("[账户 %d] 兑换失败: %s", index + 1, e.getMessage()));
+                    synchronized (exceptions) {
+                        exceptions.add(e);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            threads.add(thread);
+            thread.start();
+
+            // 稍微错开启动时间，避免 nonce 冲突
+            Thread.sleep(100);
+        }
+
+        // 等待所有交易完成
+        latch.await();
+        System.out.println("\n所有兑换交易已提交，等待确认...");
+        Thread.sleep(7000); // 等待交易确认
+
+        // 查询最终状态
+        System.out.println("\n========================================");
+        System.out.println("兑换结果统计");
+        System.out.println("========================================");
+
+        BigInteger[] binReservesAfter = getBin(this.pairAB, activeId);
+        System.out.println(String.format("最终 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesAfter[0]), format18(binReservesAfter[1])));
+        System.out.println(String.format("ReserveX 变化: %s",
+                format18(binReservesAfter[0].subtract(binReservesBefore[0]))));
+        System.out.println(String.format("ReserveY 变化: %s",
+                format18(binReservesAfter[1].subtract(binReservesBefore[1]))));
+
+        // 统计每个账户的余额变化
+        for (int i = 0; i < addresses.size(); i++) {
+            String addr = addresses.get(i);
+            BigInteger balanceABefore = initialBalancesA.get(addr);
+            BigInteger balanceBBefore = initialBalancesB.get(addr);
+            BigInteger balanceAAfter = getTokenBalance(addr, tokenA);
+            BigInteger balanceBAfter = getTokenBalance(addr, tokenB);
+
+            BigInteger changeA = balanceAAfter.subtract(balanceABefore);
+            BigInteger changeB = balanceBAfter.subtract(balanceBBefore);
+
+            System.out.println(String.format("\n账户 %d (%s):", i + 1, addr.substring(0, 10) + "..."));
+            System.out.println(String.format("  TokenA: %s -> %s (变化: %s)",
+                    format18(balanceABefore), format18(balanceAAfter), format18(changeA)));
+            System.out.println(String.format("  TokenB: %s -> %s (变化: %s)",
+                    format18(balanceBBefore), format18(balanceBAfter), format18(changeB)));
+        }
+
+        if (!exceptions.isEmpty()) {
+            System.err.println(String.format("\n警告: %d 个交易失败", exceptions.size()));
+            for (Exception e : exceptions) {
+                e.printStackTrace();
+            }
+        }
+
+        // 打印流动性分布
+        System.out.println("\n========================================");
+        System.out.println("当前流动性分布");
+        System.out.println("========================================");
+        printLiquidityDistribution(this.pairAB);
+    }
+
+    /**
+     * 多个账户同时发起添加、移除流动性、兑换交易的测试
+     * 模拟真实场景下的并发操作
+     */
+    @Test
+    public void concurrentMixedTransactions() throws Exception {
+        // 准备多个账户
+        List<String> userKeys = new ArrayList<>();
+        List<String> addresses = new ArrayList<>();
+
+        userKeys.add(userKey);
+        addresses.add(from);
+        userKeys.add(userKey1);
+        addresses.add(from1);
+
+        // 尝试从 env.json 读取更多账户
+        for (Object key : pMap.keySet()) {
+            String addr = key.toString();
+            if (!addresses.contains(addr) && pMap.get(addr) != null) {
+                userKeys.add(pMap.get(addr).toString());
+                addresses.add(addr);
+                if (addresses.size() >= 6) break; // 最多6个账户
+            }
+        }
+
+        System.out.println("\n========================================");
+        System.out.println("多账户并发混合交易测试");
+        System.out.println("========================================");
+        System.out.println(String.format("参与账户数量: %d", addresses.size()));
+
+        // 查询初始状态
+        int activeId = getActiveId(this.pairAB);
+        System.out.println(String.format("\nActive ID: %d", activeId));
+        BigInteger[] binReservesBefore = getBin(this.pairAB, activeId);
+        System.out.println(String.format("初始 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesBefore[0]), format18(binReservesBefore[1])));
+
+        // 记录初始余额
+        Map<String, BigInteger> initialBalancesA = new HashMap<>();
+        Map<String, BigInteger> initialBalancesB = new HashMap<>();
+        Map<String, Map<Integer, BigInteger>> initialLPTokens = new HashMap<>();
+
+        for (String addr : addresses) {
+            initialBalancesA.put(addr, getTokenBalance(addr, tokenA));
+            initialBalancesB.put(addr, getTokenBalance(addr, tokenB));
+            // 查询 LP token 余额（简化处理，只查询 activeId 附近的 bins）
+            Map<Integer, BigInteger> lpBalances = new HashMap<>();
+            for (int binId = activeId - 2; binId <= activeId + 2; binId++) {
+                lpBalances.put(binId, getBalanceOf(this.pairAB, addr, binId));
+            }
+            initialLPTokens.put(addr, lpBalances);
+        }
+
+        // 分配任务：前2个账户添加流动性，中间2个账户兑换，后2个账户移除流动性
+        List<Thread> threads = new ArrayList<>();
+        List<Exception> exceptions = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(addresses.size());
+
+        for (int i = 0; i < addresses.size(); i++) {
+            final int index = i;
+            final String userKey = userKeys.get(i);
+            final String address = addresses.get(i);
+
+            Thread thread = new Thread(() -> {
+                try {
+                    if (index < 2) {
+                        // 添加流动性
+                        System.out.println(String.format("\n[账户 %d] 开始添加流动性", index + 1));
+                        addLiquidityForAccount(userKey, address, index);
+                        System.out.println(String.format("[账户 %d] 添加流动性交易已提交", index + 1));
+                    } else if (index < 4) {
+                        // 兑换
+                        System.out.println(String.format("\n[账户 %d] 开始兑换", index + 1));
+                        swapForAccount(userKey, address, index);
+                        System.out.println(String.format("[账户 %d] 兑换交易已提交", index + 1));
+                    } else {
+                        // 移除流动性
+                        System.out.println(String.format("\n[账户 %d] 开始移除流动性", index + 1));
+                        removeLiquidityForAccount(userKey, address, index);
+                        System.out.println(String.format("[账户 %d] 移除流动性交易已提交", index + 1));
+                    }
+                } catch (Exception e) {
+                    System.err.println(String.format("[账户 %d] 交易失败: %s", index + 1, e.getMessage()));
+                    synchronized (exceptions) {
+                        exceptions.add(e);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            threads.add(thread);
+            thread.start();
+
+            // 稍微错开启动时间
+            Thread.sleep(150);
+        }
+
+        // 等待所有交易完成
+        latch.await();
+        System.out.println("\n所有交易已提交，等待确认...");
+        Thread.sleep(7000);
+
+        // 查询最终状态
+        System.out.println("\n========================================");
+        System.out.println("混合交易结果统计");
+        System.out.println("========================================");
+
+        BigInteger[] binReservesAfter = getBin(this.pairAB, activeId);
+        System.out.println(String.format("最终 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesAfter[0]), format18(binReservesAfter[1])));
+        System.out.println(String.format("ReserveX 变化: %s",
+                format18(binReservesAfter[0].subtract(binReservesBefore[0]))));
+        System.out.println(String.format("ReserveY 变化: %s",
+                format18(binReservesAfter[1].subtract(binReservesBefore[1]))));
+
+        // 统计每个账户的变化
+        for (int i = 0; i < addresses.size(); i++) {
+            String addr = addresses.get(i);
+            String action = i < 2 ? "添加流动性" : (i < 4 ? "兑换" : "移除流动性");
+
+            BigInteger balanceABefore = initialBalancesA.get(addr);
+            BigInteger balanceBBefore = initialBalancesB.get(addr);
+            BigInteger balanceAAfter = getTokenBalance(addr, tokenA);
+            BigInteger balanceBAfter = getTokenBalance(addr, tokenB);
+
+            System.out.println(String.format("\n账户 %d (%s) - %s:", i + 1, addr.substring(0, 10) + "...", action));
+            System.out.println(String.format("  TokenA: %s -> %s (变化: %s)",
+                    format18(balanceABefore), format18(balanceAAfter), format18(balanceAAfter.subtract(balanceABefore))));
+            System.out.println(String.format("  TokenB: %s -> %s (变化: %s)",
+                    format18(balanceBBefore), format18(balanceBAfter), format18(balanceBAfter.subtract(balanceBBefore))));
+        }
+
+        if (!exceptions.isEmpty()) {
+            System.err.println(String.format("\n警告: %d 个交易失败", exceptions.size()));
+        }
+
+        // 打印流动性分布
+        System.out.println("\n========================================");
+        System.out.println("当前流动性分布");
+        System.out.println("========================================");
+        printLiquidityDistribution(this.pairAB);
+    }
+
+    /**
+     * 多个账户同时发起添加流动性交易的测试
+     * 模拟多个用户同时添加流动性
+     */
+    @Test
+    public void concurrentAddLiquidityTransactions() throws Exception {
+        // 准备多个账户（从 env.json 中读取）
+        List<String> userKeys = new ArrayList<>();
+        List<String> addresses = new ArrayList<>();
+
+        // 添加已有的账户
+        userKeys.add(userKey);
+        addresses.add(from);
+        userKeys.add(userKey1);
+        addresses.add(from1);
+
+        // 尝试从 env.json 读取更多账户（如果有的话）
+        for (Object key : pMap.keySet()) {
+            String addr = key.toString();
+            if (!addresses.contains(addr) && pMap.get(addr) != null) {
+                userKeys.add(pMap.get(addr).toString());
+                addresses.add(addr);
+                if (addresses.size() >= 5) break; // 最多5个账户
+            }
+        }
+
+        System.out.println("\n========================================");
+        System.out.println("多账户并发添加流动性测试");
+        System.out.println("========================================");
+        System.out.println(String.format("参与账户数量: %d", addresses.size()));
+
+        // 查询初始状态
+        int activeId = getActiveId(this.pairAB);
+        System.out.println(String.format("\nActive ID: %d", activeId));
+        BigInteger[] binReservesBefore = getBin(this.pairAB, activeId);
+        System.out.println(String.format("初始 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesBefore[0]), format18(binReservesBefore[1])));
+
+        // 记录每个账户的初始余额和 LP token 余额
+        Map<String, BigInteger> initialBalancesA = new HashMap<>();
+        Map<String, BigInteger> initialBalancesB = new HashMap<>();
+        Map<String, Map<Integer, BigInteger>> initialLPTokens = new HashMap<>();
+
+        for (String addr : addresses) {
+            initialBalancesA.put(addr, getTokenBalance(addr, tokenA));
+            initialBalancesB.put(addr, getTokenBalance(addr, tokenB));
+            // 查询 LP token 余额（查询 activeId 附近的 bins）
+            Map<Integer, BigInteger> lpBalances = new HashMap<>();
+            for (int binId = activeId - 2; binId <= activeId + 2; binId++) {
+                lpBalances.put(binId, getBalanceOf(this.pairAB, addr, binId));
+            }
+            initialLPTokens.put(addr, lpBalances);
+        }
+
+        // 并发执行添加流动性交易
+        List<Thread> threads = new ArrayList<>();
+        List<Exception> exceptions = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(addresses.size());
+
+        for (int i = 0; i < addresses.size(); i++) {
+            final int index = i;
+            final String userKey = userKeys.get(i);
+            final String address = addresses.get(i);
+
+            Thread thread = new Thread(() -> {
+                try {
+                    // 每个账户添加不同数量的流动性
+                    System.out.println(String.format("\n[账户 %d] 开始添加流动性", index + 1));
+                    addLiquidityForAccount(userKey, address, index);
+                    System.out.println(String.format("[账户 %d] 添加流动性交易已提交", index + 1));
+                } catch (Exception e) {
+                    System.err.println(String.format("[账户 %d] 添加流动性失败: %s", index + 1, e.getMessage()));
+                    synchronized (exceptions) {
+                        exceptions.add(e);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            threads.add(thread);
+            thread.start();
+
+            // 稍微错开启动时间，避免 nonce 冲突
+            Thread.sleep(100);
+        }
+
+        // 等待所有交易完成
+        latch.await();
+        System.out.println("\n所有添加流动性交易已提交，等待确认...");
+        Thread.sleep(5000); // 等待交易确认
+
+        // 查询最终状态
+        System.out.println("\n========================================");
+        System.out.println("添加流动性结果统计");
+        System.out.println("========================================");
+
+        BigInteger[] binReservesAfter = getBin(this.pairAB, activeId);
+        System.out.println(String.format("最终 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesAfter[0]), format18(binReservesAfter[1])));
+        System.out.println(String.format("ReserveX 变化: %s",
+                format18(binReservesAfter[0].subtract(binReservesBefore[0]))));
+        System.out.println(String.format("ReserveY 变化: %s",
+                format18(binReservesAfter[1].subtract(binReservesBefore[1]))));
+
+        // 统计每个账户的余额变化和 LP token 变化
+        for (int i = 0; i < addresses.size(); i++) {
+            String addr = addresses.get(i);
+            BigInteger balanceABefore = initialBalancesA.get(addr);
+            BigInteger balanceBBefore = initialBalancesB.get(addr);
+            BigInteger balanceAAfter = getTokenBalance(addr, tokenA);
+            BigInteger balanceBAfter = getTokenBalance(addr, tokenB);
+
+            BigInteger changeA = balanceAAfter.subtract(balanceABefore);
+            BigInteger changeB = balanceBAfter.subtract(balanceBBefore);
+
+            System.out.println(String.format("\n账户 %d (%s):", i + 1, addr.substring(0, 10) + "..."));
+            System.out.println(String.format("  TokenA: %s -> %s (变化: %s)",
+                    format18(balanceABefore), format18(balanceAAfter), format18(changeA)));
+            System.out.println(String.format("  TokenB: %s -> %s (变化: %s)",
+                    format18(balanceBBefore), format18(balanceBAfter), format18(changeB)));
+
+            // 显示 LP token 变化
+            Map<Integer, BigInteger> lpBefore = initialLPTokens.get(addr);
+            System.out.println("  LP Token 变化:");
+            for (int binId = activeId - 2; binId <= activeId + 2; binId++) {
+                BigInteger lpBeforeValue = lpBefore.get(binId);
+                BigInteger lpAfterValue = getBalanceOf(this.pairAB, addr, binId);
+                BigInteger lpChange = lpAfterValue.subtract(lpBeforeValue);
+                if (lpChange.compareTo(BigInteger.ZERO) != 0) {
+                    System.out.println(String.format("    Bin %d: %s -> %s (变化: %s)",
+                            binId, format18(lpBeforeValue), format18(lpAfterValue), format18(lpChange)));
+                }
+            }
+        }
+
+        if (!exceptions.isEmpty()) {
+            System.err.println(String.format("\n警告: %d 个交易失败", exceptions.size()));
+            for (Exception e : exceptions) {
+                e.printStackTrace();
+            }
+        }
+
+        // 打印流动性分布
+        System.out.println("\n========================================");
+        System.out.println("当前流动性分布");
+        System.out.println("========================================");
+        printLiquidityDistribution(this.pairAB);
+    }
+
+    /**
+     * 多个账户同时发起移除流动性交易的测试
+     * 模拟多个用户同时移除流动性
+     */
+    @Test
+    public void concurrentRemoveLiquidityTransactions() throws Exception {
+        // 准备多个账户（从 env.json 中读取）
+        List<String> userKeys = new ArrayList<>();
+        List<String> addresses = new ArrayList<>();
+
+        // 添加已有的账户
+        userKeys.add(userKey);
+        addresses.add(from);
+        userKeys.add(userKey1);
+        addresses.add(from1);
+
+        // 尝试从 env.json 读取更多账户（如果有的话）
+        for (Object key : pMap.keySet()) {
+            String addr = key.toString();
+            if (!addresses.contains(addr) && pMap.get(addr) != null) {
+                userKeys.add(pMap.get(addr).toString());
+                addresses.add(addr);
+                if (addresses.size() >= 5) break; // 最多5个账户
+            }
+        }
+
+        System.out.println("\n========================================");
+        System.out.println("多账户并发移除流动性测试");
+        System.out.println("========================================");
+        System.out.println(String.format("参与账户数量: %d", addresses.size()));
+
+        // 查询初始状态
+        int activeId = getActiveId(this.pairAB);
+        System.out.println(String.format("\nActive ID: %d", activeId));
+        BigInteger[] binReservesBefore = getBin(this.pairAB, activeId);
+        System.out.println(String.format("初始 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesBefore[0]), format18(binReservesBefore[1])));
+
+        // 记录每个账户的初始余额和 LP token 余额
+        Map<String, BigInteger> initialBalancesA = new HashMap<>();
+        Map<String, BigInteger> initialBalancesB = new HashMap<>();
+        Map<String, Map<Integer, BigInteger>> initialLPTokens = new HashMap<>();
+        Map<String, List<Integer>> accountBins = new HashMap<>(); // 记录每个账户有余额的 bins
+
+        for (String addr : addresses) {
+            initialBalancesA.put(addr, getTokenBalance(addr, tokenA));
+            initialBalancesB.put(addr, getTokenBalance(addr, tokenB));
+            // 查询 LP token 余额（查询 activeId 附近的 bins）
+            Map<Integer, BigInteger> lpBalances = new HashMap<>();
+            List<Integer> bins = new ArrayList<>();
+            for (int binId = activeId - 2; binId <= activeId + 2; binId++) {
+                BigInteger balance = getBalanceOf(this.pairAB, addr, binId);
+                lpBalances.put(binId, balance);
+                if (balance.compareTo(BigInteger.ZERO) > 0) {
+                    bins.add(binId);
+                }
+            }
+            initialLPTokens.put(addr, lpBalances);
+            accountBins.put(addr, bins);
+        }
+
+        // 过滤掉没有 LP tokens 的账户
+        List<String> validUserKeys = new ArrayList<>();
+        List<String> validAddresses = new ArrayList<>();
+        for (int i = 0; i < addresses.size(); i++) {
+            if (!accountBins.get(addresses.get(i)).isEmpty()) {
+                validUserKeys.add(userKeys.get(i));
+                validAddresses.add(addresses.get(i));
+            } else {
+                System.out.println(String.format("账户 %d (%s) 没有 LP tokens，跳过", i + 1, addresses.get(i).substring(0, 10) + "..."));
+            }
+        }
+
+        if (validAddresses.isEmpty()) {
+            System.out.println("\n警告: 没有账户拥有 LP tokens，无法执行移除流动性测试");
+            return;
+        }
+
+        System.out.println(String.format("有效账户数量: %d", validAddresses.size()));
+
+        // 并发执行移除流动性交易
+        List<Thread> threads = new ArrayList<>();
+        List<Exception> exceptions = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(validAddresses.size());
+
+        for (int i = 0; i < validAddresses.size(); i++) {
+            final int index = i;
+            final String userKey = validUserKeys.get(i);
+            final String address = validAddresses.get(i);
+
+            Thread thread = new Thread(() -> {
+                try {
+                    System.out.println(String.format("\n[账户 %d] 开始移除流动性", index + 1));
+                    removeLiquidityForAccount(userKey, address, index);
+                    System.out.println(String.format("[账户 %d] 移除流动性交易已提交", index + 1));
+                } catch (Exception e) {
+                    System.err.println(String.format("[账户 %d] 移除流动性失败: %s", index + 1, e.getMessage()));
+                    synchronized (exceptions) {
+                        exceptions.add(e);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            threads.add(thread);
+            thread.start();
+
+            // 稍微错开启动时间，避免 nonce 冲突
+            Thread.sleep(100);
+        }
+
+        // 等待所有交易完成
+        latch.await();
+        System.out.println("\n所有移除流动性交易已提交，等待确认...");
+        Thread.sleep(7000); // 等待交易确认
+
+        // 查询最终状态
+        System.out.println("\n========================================");
+        System.out.println("移除流动性结果统计");
+        System.out.println("========================================");
+
+        BigInteger[] binReservesAfter = getBin(this.pairAB, activeId);
+        System.out.println(String.format("最终 Bin Reserves: ReserveX=%s, ReserveY=%s",
+                format18(binReservesAfter[0]), format18(binReservesAfter[1])));
+        System.out.println(String.format("ReserveX 变化: %s",
+                format18(binReservesAfter[0].subtract(binReservesBefore[0]))));
+        System.out.println(String.format("ReserveY 变化: %s",
+                format18(binReservesAfter[1].subtract(binReservesBefore[1]))));
+
+        // 统计每个账户的余额变化和 LP token 变化
+        for (int i = 0; i < validAddresses.size(); i++) {
+            String addr = validAddresses.get(i);
+            BigInteger balanceABefore = initialBalancesA.get(addr);
+            BigInteger balanceBBefore = initialBalancesB.get(addr);
+            BigInteger balanceAAfter = getTokenBalance(addr, tokenA);
+            BigInteger balanceBAfter = getTokenBalance(addr, tokenB);
+
+            BigInteger changeA = balanceAAfter.subtract(balanceABefore);
+            BigInteger changeB = balanceBAfter.subtract(balanceBBefore);
+
+            System.out.println(String.format("\n账户 %d (%s):", i + 1, addr.substring(0, 10) + "..."));
+            System.out.println(String.format("  TokenA: %s -> %s (变化: %s)",
+                    format18(balanceABefore), format18(balanceAAfter), format18(changeA)));
+            System.out.println(String.format("  TokenB: %s -> %s (变化: %s)",
+                    format18(balanceBBefore), format18(balanceBAfter), format18(changeB)));
+
+            // 显示 LP token 变化
+            Map<Integer, BigInteger> lpBefore = initialLPTokens.get(addr);
+            System.out.println("  LP Token 变化:");
+            for (int binId = activeId - 2; binId <= activeId + 2; binId++) {
+                BigInteger lpBeforeValue = lpBefore.get(binId);
+                BigInteger lpAfterValue = getBalanceOf(this.pairAB, addr, binId);
+                BigInteger lpChange = lpAfterValue.subtract(lpBeforeValue);
+                if (lpChange.compareTo(BigInteger.ZERO) != 0) {
+                    System.out.println(String.format("    Bin %d: %s -> %s (变化: %s)",
+                            binId, format18(lpBeforeValue), format18(lpAfterValue), format18(lpChange)));
+                }
+            }
+        }
+
+        if (!exceptions.isEmpty()) {
+            System.err.println(String.format("\n警告: %d 个交易失败", exceptions.size()));
+            for (Exception e : exceptions) {
+                e.printStackTrace();
+            }
+        }
+
+        // 打印流动性分布
+        System.out.println("\n========================================");
+        System.out.println("当前流动性分布");
+        System.out.println("========================================");
+        printLiquidityDistribution(this.pairAB);
+    }
+
+    /**
+     * 为指定账户添加流动性的辅助方法
+     */
+    private void addLiquidityForAccount(String userKey, String address, int index) throws Exception {
+        String contractAddr = this.router;
+        String method = "addLiquidity";
+        String[] types = new String[]{
+                "String", "String", "int", "BigInteger", "BigInteger",
+                "BigInteger", "BigInteger", "int", "int", "int[]",
+                "BigInteger[]", "BigInteger[]", "String", "String", "long"
+        };
+
+        int activeId = getActiveId(this.pairAB);
+        BigInteger amountX = TxUtils.parse18(String.valueOf(500 + index * 100)); // 500, 600, ...
+        BigInteger amountY = TxUtils.parse18(String.valueOf(500 + index * 100));
+
+        int[] deltaIds = {-1, 0, 1};
+        BigInteger[] distributionX = new BigInteger[]{
+                BigInteger.ZERO,
+                new BigDecimal("0.5").movePointRight(18).toBigInteger(),
+                new BigDecimal("0.5").movePointRight(18).toBigInteger()
+        };
+        BigInteger[] distributionY = new BigInteger[]{
+                new BigDecimal("0.5").movePointRight(18).toBigInteger(),
+                new BigDecimal("0.5").movePointRight(18).toBigInteger(),
+                BigInteger.ZERO
+        };
+
+        long deadline = System.currentTimeMillis() / 1000 + 3600;
+        Object[] args = new Object[]{
+                tokenA, tokenB, 10, amountX, amountY,
+                amountX.multiply(BigInteger.valueOf(95)).divide(BigInteger.valueOf(100)),
+                amountY.multiply(BigInteger.valueOf(95)).divide(BigInteger.valueOf(100)),
+                activeId, 5, deltaIds, distributionX, distributionY,
+                address, address, deadline
+        };
+
+        Map<String, BigInteger> msgValue = new HashMap<>();
+        msgValue.put(tokenA, amountX);
+        msgValue.put(tokenB, amountY);
+
+        this.call(userKey, contractAddr, method, types, args, msgValue);
+    }
+
+    /**
+     * 为指定账户执行兑换的辅助方法
+     */
+    private void swapForAccount(String userKey, String address, int index) throws Exception {
+        String contractAddr = this.router;
+        String method = "swapExactTokensForTokens";
+        String[] types = new String[]{
+                "BigInteger", "BigInteger", "int[]", "String[]", "String", "long"
+        };
+
+        BigInteger amountIn = TxUtils.parse18(String.valueOf(2.0 + index * 0.5));
+        BigInteger amountOutMin = TxUtils.parse18("0.1");
+        int[] binSteps = {10};
+        String[] tokenPath = {tokenA, tokenB};
+        long deadline = System.currentTimeMillis() / 1000 + 3600;
+
+        Object[] args = new Object[]{
+                amountIn, amountOutMin, binSteps, tokenPath, address, deadline
+        };
+
+        Map<String, BigInteger> msgValue = new HashMap<>();
+        msgValue.put(tokenA, amountIn);
+
+        this.call(userKey, contractAddr, method, types, args, msgValue);
+    }
+
+    /**
+     * 为指定账户移除流动性的辅助方法
+     */
+    private void removeLiquidityForAccount(String userKey, String address, int index) throws Exception {
+        // 先查询该账户有哪些 LP tokens
+        int activeId = getActiveId(this.pairAB);
+        List<Integer> bins = new ArrayList<>();
+        for (int binId = activeId - 2; binId <= activeId + 2; binId++) {
+            BigInteger balance = getBalanceOf(this.pairAB, address, binId);
+            if (balance.compareTo(BigInteger.ZERO) > 0) {
+                bins.add(binId);
+            }
+        }
+
+        if (bins.isEmpty()) {
+            System.out.println(String.format("[账户 %d] 没有 LP tokens，跳过移除流动性", index + 1));
+            return;
+        }
+
+        // 移除所有有余额的 bin 的部分流动性
+        int[] ids = new int[bins.size()];
+        BigInteger[] amounts = new BigInteger[bins.size()];
+
+        for (int i = 0; i < bins.size(); i++) {
+            int binId = bins.get(i);
+            BigInteger lpBalance = getBalanceOf(this.pairAB, address, binId);
+            BigInteger amountToRemove = lpBalance.divide(BigInteger.valueOf(2)); // 移除一半
+            ids[i] = binId;
+            amounts[i] = amountToRemove;
+        }
+
+        String contractAddr = this.router;
+        String method = "removeLiquidity";
+        String[] types = new String[]{
+                "String",      // tokenX
+                "String",      // tokenY
+                "int",         // binStep
+                "BigInteger",  // amountXMin
+                "BigInteger",  // amountYMin
+                "int[]",       // ids
+                "BigInteger[]", // amounts
+                "String",      // to
+                "long"         // deadline
+        };
+
+        long deadline = System.currentTimeMillis() / 1000 + 3600;
+        Object[] args = new Object[]{
+                tokenA, tokenB, 10,
+                BigInteger.ZERO, BigInteger.ZERO, // amountXMin, amountYMin
+                ids,      // ids 数组
+                amounts,  // amounts 数组
+                address,
+                deadline
+        };
+
+        this.call(userKey, contractAddr, method, types, args, null);
     }
 
     /**
