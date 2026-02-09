@@ -31,20 +31,28 @@ import network.nerve.base.data.CoinTo;
 import network.nerve.base.data.Transaction;
 import network.nerve.core.basic.Result;
 import network.nerve.core.crypto.HexUtil;
+import network.nerve.core.exception.NulsException;
 import network.nerve.core.io.IoUtils;
 import network.nerve.core.model.StringUtils;
 import network.nerve.core.parse.JSONUtils;
+import network.nerve.kit.error.AccountErrorCode;
 import network.nerve.kit.model.Account;
 import network.nerve.kit.model.NerveToken;
+import network.nerve.kit.model.ParsedEventData;
+import network.nerve.kit.model.SwapResult;
 import network.nerve.kit.model.dto.CoinFromDto;
 import network.nerve.kit.model.dto.CoinToDto;
 import network.nerve.kit.model.dto.RpcResult;
 import network.nerve.kit.model.dto.TransferDto;
+import network.nerve.kit.model.event.IToken1155;
+import network.nerve.kit.model.event.LBFactoryEvents;
+import network.nerve.kit.model.event.LBPairEvents;
 import network.nerve.kit.txdata.anybus.*;
 import network.nerve.kit.util.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -54,6 +62,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static network.nerve.core.rpc.util.NulsDateUtils.getCurrentTimeSeconds;
+import static network.nerve.kit.constant.Constant.PUBLIC_SERVER_URL;
 
 /**
  * @author: PierreLuo
@@ -423,10 +432,10 @@ public class AnyBusTest {
         BigInteger totalSupply = BigInteger.ZERO;
 
         // 打印表头
-        System.out.println(String.format("%-10s %-35s %-35s %-50s %-20s",
+        System.out.println(String.format("%-10s %-35s %-35s %-35s %-20s",
                 "Bin ID", "ReserveX", "ReserveY", "Total Supply", "Price"));
         System.out.println("------------------------------------------------------------------------" +
-                "------------------------------------------------------------------------------------------------------");
+                "---------------------------------------------------------------------------------------");
 
         // 打印每个 bin 的信息
         for (int binId : sortedBins) {
@@ -445,7 +454,7 @@ public class AnyBusTest {
                     .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
 
             String marker = (binId == activeId) ? " <-- Active" : "";
-            System.out.println(String.format("%-10d %-35s %-35s %-50s %-20s%s",
+            System.out.println(String.format("%-10d %-30s %-30s %-30s %-20s%s",
                     binId,
                     reserveXDecimal.toPlainString(),
                     reserveYDecimal.toPlainString(),
@@ -460,7 +469,7 @@ public class AnyBusTest {
 
         // 打印汇总信息
         System.out.println("------------------------------------------------------------------------" +
-                "------------------------------------------------------------------------------------------------------");
+                "---------------------------------------------------------------------------------------");
         java.math.BigDecimal totalReserveXDecimal = new java.math.BigDecimal(totalReserveX)
                 .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
         java.math.BigDecimal totalReserveYDecimal = new java.math.BigDecimal(totalReserveY)
@@ -468,7 +477,7 @@ public class AnyBusTest {
         java.math.BigDecimal totalSupplyDecimal = new java.math.BigDecimal(totalSupply)
                 .divide(new java.math.BigDecimal("1000000000000000000"), 18, java.math.RoundingMode.HALF_UP);
 
-        System.out.println(String.format("%-10s %-35s %-35s %-50s",
+        System.out.println(String.format("%-10s %-35s %-35s %-35s",
                 "总计",
                 totalReserveXDecimal.toPlainString(),
                 totalReserveYDecimal.toPlainString(),
@@ -1590,7 +1599,7 @@ public class AnyBusTest {
         // 等待所有交易完成
         latch.await();
         System.out.println("\n所有移除流动性交易已提交，等待确认...");
-        Thread.sleep(7000); // 等待交易确认
+        Thread.sleep(5000); // 等待交易确认
 
         // 查询最终状态
         System.out.println("\n========================================");
@@ -1975,6 +1984,103 @@ public class AnyBusTest {
 
         // 打印详细流动性分布
         printLiquidityDistribution(pair);
+    }
+
+    /**
+     * 解析 SwapResult 中的事件，并演示对所有 eventName 的分支处理。
+     * 使用 desTest 中的 business hex 作为样例数据（若该 hex 为完整 tx 数据则可能只解析出部分事件或空列表，分支逻辑仍会覆盖所有类型）。
+     */
+    @Test
+    public void parseSwapResultEvents() throws Exception {
+        List<SwapResult> results = new ArrayList<>();
+        SwapResult sr = new SwapResult();
+        // 使用与 desTest 相同的 hex 作为 business（AnyBusCallResult 序列化），若格式一致则可解析出事件
+        String businessHex = "fd3c014164644c6971756964697479526573756c747b616d6f756e745841646465643d31303030303030303030303030303030303030302c20616d6f756e745941646465643d353030303030303030303030303030303030302c20616d6f756e74584c6566743d302c20616d6f756e74594c6566743d302c206465706f7369744964733d383338383630362c383338383630372c383338383630382c383338383630392c383338383631302c206c69717569646974794d696e7465643d32323539323535353139383134383936323235363139353639353137332c32323539323535353139383134383936323235363139353639353137332c32363038373633353635303636353536343432343737353830383238332c313733323931363631363537343439363335302c313733333738323835383337363434363137307d403130303233316165393563356263623237303637666661393264646332373833346234333262663837346564386363333238386139643631373635636463613102050002327f65b2a5657ef2aa396363e2b50db4fc008fe1050002194c50b6fd6e6c1d1ddd034fafb6a3ebf1d999630000e8890423c78a000000000000000000000000000000000000000000000000050004000000000000000000050002327f65b2a5657ef2aa396363e2b50db4fc008fe1050002194c50b6fd6e6c1d1ddd034fafb6a3ebf1d999630000f444829163450000000000000000000000000000000000000000000000000500020000000000000000000625544e56546454535058667348424e794a4752685a71754d6e77354e507147666650526a6151bcae0100000000000e5472616e7366657253696e676c650525544e5654645453505a446a7a69414d5465684c6f733579705569567867626d5742583839330025544e5654645453504a4a4d476837696a55474471565a79756362654e317a346a716231616407383338383630361d323235393235353531393831343839363232353631393536393531373325544e56546454535058667348424e794a4752685a71754d6e77354e507147666650526a6151bcae0100000000000e5472616e7366657253696e676c650525544e5654645453505a446a7a69414d5465684c6f733579705569567867626d5742583839330025544e5654645453504a4a4d476837696a55474471565a79756362654e317a346a716231616407383338383630371d323235393235353531393831343839363232353631393536393531373325544e56546454535058667348424e794a4752685a71754d6e77354e507147666650526a6151bcae0100000000000e5472616e7366657253696e676c650525544e5654645453505a446a7a69414d5465684c6f733579705569567867626d5742583839330025544e5654645453504a4a4d476837696a55474471565a79756362654e317a346a716231616407383338383630381d323630383736333536353036363535363434323437373538303832383325544e56546454535058667348424e794a4752685a71754d6e77354e507147666650526a6151bcae0100000000000e5472616e7366657253696e676c650525544e5654645453505a446a7a69414d5465684c6f733579705569567867626d5742583839330025544e5654645453504a4a4d476837696a55474471565a79756362654e317a346a71623161640738333838363039133137333239313636313635373434393633353025544e56546454535058667348424e794a4752685a71754d6e77354e507147666650526a6151bcae0100000000000e5472616e7366657253696e676c650525544e5654645453505a446a7a69414d5465684c6f733579705569567867626d5742583839330025544e5654645453504a4a4d476837696a55474471565a79756362654e317a346a71623161640738333838363130133137333337383238353833373634343631373025544e56546454535058667348424e794a4752685a71754d6e77354e507147666650526a6151bcae0100000000000f4465706f7369746564546f42696e730425544e5654645453505a446a7a69414d5465684c6f733579705569567867626d57425838393325544e5654645453504a4a4d476837696a55474471565a79756362654e317a346a716231616427383338383630362c383338383630372c383338383630382c383338383630392c38333838363130fd4401303030303030303030303030303030303134643131323064376231363030303030303030303030303030303030303030303030303030303030303030303030302c303030303030303030303030303030303134643131323064376231363030303030303030303030303030303030303030303030303030303030303030303030302c303030303030303030303030303030303162633136643637346563383030303030303030303030303030303030303030333738326461636539643930303030302c303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030323961323234316166363263303030302c30303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032396132323431616636326330303030";
+        sr.setBusiness(businessHex);
+        results.add(sr);
+
+        List<ParsedEventData> events = SwapResultEventParser.parseEvents(results);
+        System.out.println("Parsed events count: " + events.size());
+
+        for (ParsedEventData e : events) {
+            String name = e.getEventName();
+            Object data = e.getEventData();
+            System.out.println("Event: " + name + " @ " + e.getContractAddress() + " block=" + e.getBlockNumber());
+
+            if ("TransferSingle".equals(name)) {
+                IToken1155.TransferSingle ev = (IToken1155.TransferSingle) data;
+                if (ev != null) System.out.println("  TransferSingle: " + ev);
+            } else if ("TransferBatch".equals(name)) {
+                IToken1155.TransferBatch ev = (IToken1155.TransferBatch) data;
+                if (ev != null) System.out.println("  TransferBatch: " + ev);
+            } else if ("ApprovalForAll".equals(name)) {
+                IToken1155.ApprovalForAll ev = (IToken1155.ApprovalForAll) data;
+                if (ev != null) System.out.println("  ApprovalForAll: " + ev);
+            } else if ("URI".equals(name)) {
+                IToken1155.URI ev = (IToken1155.URI) data;
+                if (ev != null) System.out.println("  URI: " + ev);
+            } else if ("LBPairCreated".equals(name)) {
+                LBFactoryEvents.LBPairCreated ev = (LBFactoryEvents.LBPairCreated) data;
+                if (ev != null) System.out.println("  LBPairCreated: " + ev);
+            } else if ("FeeRecipientSet".equals(name)) {
+                LBFactoryEvents.FeeRecipientSet ev = (LBFactoryEvents.FeeRecipientSet) data;
+                if (ev != null) System.out.println("  FeeRecipientSet: " + ev);
+            } else if ("FlashLoanFeeSet".equals(name)) {
+                LBFactoryEvents.FlashLoanFeeSet ev = (LBFactoryEvents.FlashLoanFeeSet) data;
+                if (ev != null) System.out.println("  FlashLoanFeeSet: " + ev);
+            } else if ("LBPairImplementationSet".equals(name)) {
+                LBFactoryEvents.LBPairImplementationSet ev = (LBFactoryEvents.LBPairImplementationSet) data;
+                if (ev != null) System.out.println("  LBPairImplementationSet: " + ev);
+            } else if ("LBPairIgnoredStateChanged".equals(name)) {
+                LBFactoryEvents.LBPairIgnoredStateChanged ev = (LBFactoryEvents.LBPairIgnoredStateChanged) data;
+                if (ev != null) System.out.println("  LBPairIgnoredStateChanged: " + ev);
+            } else if ("PresetSet".equals(name)) {
+                LBFactoryEvents.PresetSet ev = (LBFactoryEvents.PresetSet) data;
+                if (ev != null) System.out.println("  PresetSet: " + ev);
+            } else if ("PresetOpenStateChanged".equals(name)) {
+                LBFactoryEvents.PresetOpenStateChanged ev = (LBFactoryEvents.PresetOpenStateChanged) data;
+                if (ev != null) System.out.println("  PresetOpenStateChanged: " + ev);
+            } else if ("PresetRemoved".equals(name)) {
+                LBFactoryEvents.PresetRemoved ev = (LBFactoryEvents.PresetRemoved) data;
+                if (ev != null) System.out.println("  PresetRemoved: " + ev);
+            } else if ("QuoteAssetAdded".equals(name)) {
+                LBFactoryEvents.QuoteAssetAdded ev = (LBFactoryEvents.QuoteAssetAdded) data;
+                if (ev != null) System.out.println("  QuoteAssetAdded: " + ev);
+            } else if ("QuoteAssetRemoved".equals(name)) {
+                LBFactoryEvents.QuoteAssetRemoved ev = (LBFactoryEvents.QuoteAssetRemoved) data;
+                if (ev != null) System.out.println("  QuoteAssetRemoved: " + ev);
+            } else if ("DepositedToBins".equals(name)) {
+                LBPairEvents.DepositedToBins ev = (LBPairEvents.DepositedToBins) data;
+                if (ev != null) System.out.println("  DepositedToBins: " + ev);
+            } else if ("WithdrawnFromBins".equals(name)) {
+                LBPairEvents.WithdrawnFromBins ev = (LBPairEvents.WithdrawnFromBins) data;
+                if (ev != null) System.out.println("  WithdrawnFromBins: " + ev);
+            } else if ("CompositionFees".equals(name)) {
+                LBPairEvents.CompositionFees ev = (LBPairEvents.CompositionFees) data;
+                if (ev != null) System.out.println("  CompositionFees: " + ev);
+            } else if ("CollectedProtocolFees".equals(name)) {
+                LBPairEvents.CollectedProtocolFees ev = (LBPairEvents.CollectedProtocolFees) data;
+                if (ev != null) System.out.println("  CollectedProtocolFees: " + ev);
+            } else if ("Swap".equals(name)) {
+                LBPairEvents.Swap ev = (LBPairEvents.Swap) data;
+                if (ev != null) System.out.println("  Swap: " + ev);
+            } else if ("StaticFeeParametersSet".equals(name)) {
+                LBPairEvents.StaticFeeParametersSet ev = (LBPairEvents.StaticFeeParametersSet) data;
+                if (ev != null) System.out.println("  StaticFeeParametersSet: " + ev);
+            } else if ("HooksParametersSet".equals(name)) {
+                LBPairEvents.HooksParametersSet ev = (LBPairEvents.HooksParametersSet) data;
+                if (ev != null) System.out.println("  HooksParametersSet: " + ev);
+            } else if ("FlashLoan".equals(name)) {
+                LBPairEvents.FlashLoan ev = (LBPairEvents.FlashLoan) data;
+                if (ev != null) System.out.println("  FlashLoan: " + ev);
+            } else if ("OracleLengthIncreased".equals(name)) {
+                LBPairEvents.OracleLengthIncreased ev = (LBPairEvents.OracleLengthIncreased) data;
+                if (ev != null) System.out.println("  OracleLengthIncreased: " + ev);
+            } else if ("ForcedDecay".equals(name)) {
+                LBPairEvents.ForcedDecay ev = (LBPairEvents.ForcedDecay) data;
+                if (ev != null) System.out.println("  ForcedDecay: " + ev);
+            }
+        }
     }
 
     private RpcResult callView(String contract, String method, String[] types, Object args) throws Exception {
