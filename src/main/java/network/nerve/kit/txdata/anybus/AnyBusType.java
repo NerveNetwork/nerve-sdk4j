@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package network.nerve.anybus;
+package network.nerve.kit.txdata.anybus;
 
 import java.util.HashMap;
 import java.util.Map;

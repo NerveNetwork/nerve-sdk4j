@@ -1,4 +1,4 @@
-package network.nerve.anybus;
+package network.nerve.kit.txdata.anybus;
 
 import java.math.BigInteger;
 

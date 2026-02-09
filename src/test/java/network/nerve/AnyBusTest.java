@@ -24,7 +24,6 @@
 package network.nerve;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import network.nerve.anybus.*;
 import network.nerve.base.basic.AddressTool;
 import network.nerve.base.data.CoinData;
 import network.nerve.base.data.CoinFrom;
@@ -32,22 +31,20 @@ import network.nerve.base.data.CoinTo;
 import network.nerve.base.data.Transaction;
 import network.nerve.core.basic.Result;
 import network.nerve.core.crypto.HexUtil;
-import network.nerve.core.exception.NulsException;
 import network.nerve.core.io.IoUtils;
 import network.nerve.core.model.StringUtils;
 import network.nerve.core.parse.JSONUtils;
-import network.nerve.kit.error.AccountErrorCode;
 import network.nerve.kit.model.Account;
 import network.nerve.kit.model.NerveToken;
 import network.nerve.kit.model.dto.CoinFromDto;
 import network.nerve.kit.model.dto.CoinToDto;
 import network.nerve.kit.model.dto.RpcResult;
 import network.nerve.kit.model.dto.TransferDto;
+import network.nerve.kit.txdata.anybus.*;
 import network.nerve.kit.util.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -57,7 +54,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static network.nerve.core.rpc.util.NulsDateUtils.getCurrentTimeSeconds;
-import static network.nerve.kit.constant.Constant.PUBLIC_SERVER_URL;
 
 /**
  * @author: PierreLuo

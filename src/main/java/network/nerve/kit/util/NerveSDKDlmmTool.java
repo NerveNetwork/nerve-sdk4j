@@ -2,10 +2,19 @@ package network.nerve.kit.util;
 
 import network.nerve.core.basic.Result;
 import network.nerve.core.rpc.model.*;
+import network.nerve.kit.model.annotation.ApiOperation;
+import network.nerve.kit.model.dto.DlmmLBPairInformationDto;
 import network.nerve.kit.model.dto.DlmmLiquidityDistributionDto;
+import network.nerve.kit.model.dto.DlmmPresetConfigDto;
+import network.nerve.kit.model.dto.DlmmProtocolFeesDto;
+import network.nerve.kit.model.dto.DlmmStaticFeeParametersDto;
+import network.nerve.kit.model.dto.DlmmSwapInResultDto;
+import network.nerve.kit.model.dto.DlmmSwapOutResultDto;
+import network.nerve.kit.model.dto.DlmmVariableFeeParametersDto;
 import network.nerve.kit.service.DlmmService;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -135,6 +144,170 @@ public class NerveSDKDlmmTool {
     })
     public static void printLiquidityDistribution(int chainId, String pairAddress) throws Exception {
         System.out.println(dlmmService.getLiquidityDistribution(chainId, pairAddress).toString());
+    }
+
+    // ============================= LBPair view 补充 =============================
+
+    public static String getFactory(int chainId, String pairAddress) throws Exception {
+        return dlmmService.getFactory(chainId, pairAddress);
+    }
+
+    public static BigInteger[] getReserves(int chainId, String pairAddress) throws Exception {
+        return dlmmService.getReserves(chainId, pairAddress);
+    }
+
+    public static DlmmProtocolFeesDto getProtocolFees(int chainId, String pairAddress) throws Exception {
+        return dlmmService.getProtocolFees(chainId, pairAddress);
+    }
+
+    public static DlmmStaticFeeParametersDto getStaticFeeParameters(int chainId, String pairAddress) throws Exception {
+        return dlmmService.getStaticFeeParameters(chainId, pairAddress);
+    }
+
+    public static DlmmVariableFeeParametersDto getVariableFeeParameters(int chainId, String pairAddress) throws Exception {
+        return dlmmService.getVariableFeeParameters(chainId, pairAddress);
+    }
+
+    public static int getIdFromPrice(int chainId, String pairAddress, BigInteger price) throws Exception {
+        return dlmmService.getIdFromPrice(chainId, pairAddress, price);
+    }
+
+    public static DlmmSwapInResultDto getSwapIn(int chainId, String pairAddress, BigInteger amountOut, boolean swapForY) throws Exception {
+        return dlmmService.getSwapIn(chainId, pairAddress, amountOut, swapForY);
+    }
+
+    public static DlmmSwapOutResultDto getSwapOut(int chainId, String pairAddress, BigInteger amountIn, boolean swapForY) throws Exception {
+        return dlmmService.getSwapOut(chainId, pairAddress, amountIn, swapForY);
+    }
+
+    // ============================= LBFactory view =============================
+
+    public static String getFactoryOwner(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getFactoryOwner(chainId, factoryAddress);
+    }
+
+    public static BigInteger getFactoryMinBinStep(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getFactoryMinBinStep(chainId, factoryAddress);
+    }
+
+    public static String getFactoryFeeRecipient(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getFactoryFeeRecipient(chainId, factoryAddress);
+    }
+
+    public static String getFactoryLBPairImplementation(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getFactoryLBPairImplementation(chainId, factoryAddress);
+    }
+
+    public static boolean isQuoteAsset(int chainId, String factoryAddress, String token) throws Exception {
+        return dlmmService.isQuoteAsset(chainId, factoryAddress, token);
+    }
+
+    public static DlmmLBPairInformationDto getLBPairInformation(int chainId, String factoryAddress, String tokenA, String tokenB, BigInteger binStep) throws Exception {
+        return dlmmService.getLBPairInformation(chainId, factoryAddress, tokenA, tokenB, binStep);
+    }
+
+    public static DlmmPresetConfigDto getPreset(int chainId, String factoryAddress, int binStep) throws Exception {
+        return dlmmService.getPreset(chainId, factoryAddress, binStep);
+    }
+
+    public static BigInteger getNumberOfLBPairs(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getNumberOfLBPairs(chainId, factoryAddress);
+    }
+
+    public static String getLBPairAtIndex(int chainId, String factoryAddress, BigInteger index) throws Exception {
+        return dlmmService.getLBPairAtIndex(chainId, factoryAddress, index);
+    }
+
+    public static BigInteger getNumberOfQuoteAssets(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getNumberOfQuoteAssets(chainId, factoryAddress);
+    }
+
+    public static String getQuoteAssetAtIndex(int chainId, String factoryAddress, BigInteger index) throws Exception {
+        return dlmmService.getQuoteAssetAtIndex(chainId, factoryAddress, index);
+    }
+
+    public static List<BigInteger> getAllBinSteps(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getAllBinSteps(chainId, factoryAddress);
+    }
+
+    public static List<BigInteger> getOpenBinSteps(int chainId, String factoryAddress) throws Exception {
+        return dlmmService.getOpenBinSteps(chainId, factoryAddress);
+    }
+
+    public static List<DlmmLBPairInformationDto> getAllLBPairs(int chainId, String factoryAddress, String tokenX, String tokenY) throws Exception {
+        return dlmmService.getAllLBPairs(chainId, factoryAddress, tokenX, tokenY);
+    }
+
+    // ============================= LBFactory 写方法（仅组装交易） =============================
+
+    public static Result createLBPairTx(int chainId, String factoryAddress, String fromAddress,
+                                         String tokenX, String tokenY, int activeId, int binStep) throws Exception {
+        return dlmmService.createLBPairTx(chainId, factoryAddress, fromAddress, tokenX, tokenY, activeId, binStep);
+    }
+
+    public static Result addQuoteAssetTx(int chainId, String factoryAddress, String fromAddress, String quoteAsset) throws Exception {
+        return dlmmService.addQuoteAssetTx(chainId, factoryAddress, fromAddress, quoteAsset);
+    }
+
+    public static Result removeQuoteAssetTx(int chainId, String factoryAddress, String fromAddress, String quoteAsset) throws Exception {
+        return dlmmService.removeQuoteAssetTx(chainId, factoryAddress, fromAddress, quoteAsset);
+    }
+
+    public static Result setPresetTx(int chainId, String factoryAddress, String fromAddress,
+                                     int binStep, int baseFactor, int filterPeriod, int decayPeriod,
+                                     int reductionFactor, int variableFeeControl, int protocolShare,
+                                     int maxVolatilityAccumulator, boolean isOpen) throws Exception {
+        return dlmmService.setPresetTx(chainId, factoryAddress, fromAddress, binStep, baseFactor, filterPeriod, decayPeriod, reductionFactor, variableFeeControl, protocolShare, maxVolatilityAccumulator, isOpen);
+    }
+
+    public static Result setPresetOpenStateTx(int chainId, String factoryAddress, String fromAddress, int binStep, boolean isOpen) throws Exception {
+        return dlmmService.setPresetOpenStateTx(chainId, factoryAddress, fromAddress, binStep, isOpen);
+    }
+
+    public static Result removePresetTx(int chainId, String factoryAddress, String fromAddress, int binStep) throws Exception {
+        return dlmmService.removePresetTx(chainId, factoryAddress, fromAddress, binStep);
+    }
+
+    public static Result setLBPairIgnoredTx(int chainId, String factoryAddress, String fromAddress,
+                                             String tokenX, String tokenY, int binStep, boolean ignored) throws Exception {
+        return dlmmService.setLBPairIgnoredTx(chainId, factoryAddress, fromAddress, tokenX, tokenY, binStep, ignored);
+    }
+
+    public static Result setFeesParametersOnPairTx(int chainId, String factoryAddress, String fromAddress,
+                                                    String tokenX, String tokenY, int binStep,
+                                                    int baseFactor, int filterPeriod, int decayPeriod,
+                                                    int reductionFactor, int variableFeeControl, int protocolShare,
+                                                    int maxVolatilityAccumulator) throws Exception {
+        return dlmmService.setFeesParametersOnPairTx(chainId, factoryAddress, fromAddress, tokenX, tokenY, binStep, baseFactor, filterPeriod, decayPeriod, reductionFactor, variableFeeControl, protocolShare, maxVolatilityAccumulator);
+    }
+
+    public static Result setFeeRecipientTx(int chainId, String factoryAddress, String fromAddress, String feeRecipient) throws Exception {
+        return dlmmService.setFeeRecipientTx(chainId, factoryAddress, fromAddress, feeRecipient);
+    }
+
+    public static Result forceDecayTx(int chainId, String factoryAddress, String fromAddress, String pairAddress) throws Exception {
+        return dlmmService.forceDecayTx(chainId, factoryAddress, fromAddress, pairAddress);
+    }
+
+    // ============================= LBPair 写方法（仅组装交易） =============================
+
+    public static Result mintTx(int chainId, String pairAddress, String fromAddress,
+                               String to, int[] binIds, BigInteger[] distributionX, BigInteger[] distributionY, String refundTo,
+                               Map<String, BigInteger> msgValue) throws Exception {
+        return dlmmService.mintTx(chainId, pairAddress, fromAddress, to, binIds, distributionX, distributionY, refundTo, msgValue);
+    }
+
+    public static Result burnTx(int chainId, String pairAddress, String fromAddress,
+                                String from, String to, int[] ids, BigInteger[] amountsToBurn) throws Exception {
+        return dlmmService.burnTx(chainId, pairAddress, fromAddress, from, to, ids, amountsToBurn);
+    }
+
+    public static Result swapTx(int chainId, String pairAddress, String fromAddress, boolean swapForY, String to, Map<String, BigInteger> msgValue) throws Exception {
+        return dlmmService.swapTx(chainId, pairAddress, fromAddress, swapForY, to, msgValue);
+    }
+
+    public static Result collectProtocolFeesTx(int chainId, String pairAddress, String fromAddress) throws Exception {
+        return dlmmService.collectProtocolFeesTx(chainId, pairAddress, fromAddress);
     }
 
     // ============================= AnyBus CREATE：LBFactory / LBRouter =============================
@@ -279,6 +452,42 @@ public class NerveSDKDlmmTool {
                                                     String to, long deadline) throws Exception {
         return dlmmService.swapTokensForExactTokensTx(chainId, routerAddress, fromAddress,
                 amountOut, amountInMax, pairBinSteps, tokenPath, to, deadline);
+    }
+
+    // ============================= LBRouter view 补充 =============================
+
+    public static String getRouterFactoryAddress(int chainId, String routerAddress) throws Exception {
+        return dlmmService.getRouterFactoryAddress(chainId, routerAddress);
+    }
+
+    public static int getRouterIdFromPrice(int chainId, String routerAddress, String pairAddress, BigInteger price) throws Exception {
+        return dlmmService.getRouterIdFromPrice(chainId, routerAddress, pairAddress, price);
+    }
+
+    public static BigInteger getRouterPriceFromId(int chainId, String routerAddress, String pairAddress, int id) throws Exception {
+        return dlmmService.getRouterPriceFromId(chainId, routerAddress, pairAddress, id);
+    }
+
+    public static DlmmSwapInResultDto getRouterSwapIn(int chainId, String routerAddress, String pairAddress, BigInteger amountOut, boolean swapForY) throws Exception {
+        return dlmmService.getRouterSwapIn(chainId, routerAddress, pairAddress, amountOut, swapForY);
+    }
+
+    public static DlmmSwapOutResultDto getRouterSwapOut(int chainId, String routerAddress, String pairAddress, BigInteger amountIn, boolean swapForY) throws Exception {
+        return dlmmService.getRouterSwapOut(chainId, routerAddress, pairAddress, amountIn, swapForY);
+    }
+
+    public static Result createLBPairViaRouterTx(int chainId, String routerAddress, String fromAddress,
+                                                 String tokenX, String tokenY, int activeId, int binStep) throws Exception {
+        return dlmmService.createLBPairViaRouterTx(chainId, routerAddress, fromAddress, tokenX, tokenY, activeId, binStep);
+    }
+
+    public static Result sweepTx(int chainId, String routerAddress, String fromAddress, String token, String to, BigInteger amount, Map<String, BigInteger> msgValue) throws Exception {
+        return dlmmService.sweepTx(chainId, routerAddress, fromAddress, token, to, amount, msgValue);
+    }
+
+    public static Result sweepLBTokenTx(int chainId, String routerAddress, String fromAddress,
+                                         String lbTokenAddress, String to, int[] ids, BigInteger[] amounts) throws Exception {
+        return dlmmService.sweepLBTokenTx(chainId, routerAddress, fromAddress, lbTokenAddress, to, ids, amounts);
     }
 }
 

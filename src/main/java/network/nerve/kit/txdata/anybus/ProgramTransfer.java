@@ -22,7 +22,7 @@
  * SOFTWARE.
  *
  */
-package network.nerve.anybus;
+package network.nerve.kit.txdata.anybus;
 
 import network.nerve.base.basic.AddressTool;
 import network.nerve.base.basic.NulsByteBuffer;

@@ -21,10 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package network.nerve.anybus;
+package network.nerve.kit.txdata.anybus;
 
-import network.nerve.anybus.AnyBusEvent;
-import network.nerve.anybus.ProgramTransfer;
 import network.nerve.base.basic.NulsByteBuffer;
 import network.nerve.base.basic.NulsOutputStreamBuffer;
 import network.nerve.base.data.BaseNulsData;
